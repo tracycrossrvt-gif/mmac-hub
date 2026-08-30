@@ -114,3 +114,96 @@ values (
   'Brown and white'
 )
 on conflict (id) do nothing;
+-- ------------------------------------------------------------
+-- Service catalog
+-- ------------------------------------------------------------
+
+insert into public.services (
+  id,
+  name,
+  slug,
+  description,
+  species_scope,
+  is_active,
+  sort_order
+)
+values
+  (
+    '50000000-0000-0000-0000-000000000001',
+    'Spay / Neuter',
+    'spay-neuter',
+    'Spay or neuter coordination.',
+    'all',
+    true,
+    10
+  ),
+  (
+    '50000000-0000-0000-0000-000000000002',
+    'Rabies Vaccination',
+    'rabies-vaccination',
+    'Rabies vaccination coordination.',
+    'all',
+    true,
+    20
+  ),
+  (
+    '50000000-0000-0000-0000-000000000003',
+    'Core Vaccines',
+    'core-vaccines',
+    'Routine core vaccination coordination.',
+    'all',
+    true,
+    30
+  ),
+ (
+  '50000000-0000-0000-0000-000000000004',
+  'Parasite Prevention',
+  'parasite-prevention',
+  'Parasite prevention assistance.',
+  'all',
+  true,
+  40
+  ),
+  (
+    '50000000-0000-0000-0000-000000000005',
+    'Heartworm Testing',
+    'heartworm-testing',
+    'Routine heartworm screening request.',
+    'dog',
+    true,
+    50
+  ),
+  (
+    '50000000-0000-0000-0000-000000000006',
+    'FeLV / FIV Testing',
+    'felv-fiv-testing',
+    'Routine feline FeLV/FIV screening request.',
+    'cat',
+    true,
+    60
+  ),
+  (
+    '50000000-0000-0000-0000-000000000007',
+    'Nail Trim',
+    'nail-trim',
+    'Basic nail trimming service.',
+    'all',
+    true,
+    70
+  ),
+  (
+    '50000000-0000-0000-0000-000000000008',
+    'Microchipping',
+    'microchipping',
+    'Microchip placement request.',
+    'all',
+    true,
+    80
+  )
+on conflict (id) do update set
+  name = excluded.name,
+  slug = excluded.slug,
+  description = excluded.description,
+  species_scope = excluded.species_scope,
+  is_active = excluded.is_active,
+  sort_order = excluded.sort_order;
