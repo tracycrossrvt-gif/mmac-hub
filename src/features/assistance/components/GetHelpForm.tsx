@@ -1,5 +1,6 @@
 "use client";
 
+
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
@@ -8,6 +9,8 @@ import {
   getHelpSchema,
   type GetHelpFormData,
 } from "@/features/assistance/validation/getHelpSchema";
+
+import { submitGetHelpRequest } from "@/features/assistance/actions/submitGetHelpRequest";
 
 export function GetHelpForm() {
   const {
@@ -52,11 +55,13 @@ export function GetHelpForm() {
   });
 
   const shouldShowHeatCycle =
-    sex === "female" && alteredStatus === "not_altered";
+    sex === "female" && alteredStatus === "unaltered";
 
-  const onSubmit = (data: GetHelpFormData) => {
-    console.log("Validated get-help submission:", data);
-  };
+  const onSubmit = async (data: GetHelpFormData) => {
+  const result = await submitGetHelpRequest(data);
+
+  console.log("Get-help server result:", result);
+};
   return (
     <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-10">
       {/* ABOUT YOU */}
@@ -227,7 +232,7 @@ export function GetHelpForm() {
                 Select one
               </option>
               <option value="altered">Spayed / neutered</option>
-              <option value="not_altered">Not spayed / neutered</option>
+              <option value="unaltered">Not spayed / neutered</option>
               <option value="unknown">I&apos;m not sure</option>
             </select>
 

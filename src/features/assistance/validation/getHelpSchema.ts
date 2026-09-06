@@ -70,7 +70,7 @@ export const getHelpSchema = z
     (data) =>
       !(
         data.sex === "female" &&
-        data.alteredStatus === "not_altered"
+        data.alteredStatus === "unaltered"
       ) || Boolean(data.lastHeatCycleNotes?.trim()),
     {
       message:
