@@ -2,6 +2,10 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { createAdminClient } from "@/lib/supabase/admin";
+import { requireAdmin } from "@/features/auth/server/requireAdmin";
+import { SignOutButton } from "@/features/auth/components/SignOutButton";
+
+export const dynamic = "force-dynamic";
 
 import { startRequestReview } from "@/features/assistance/actions/startRequestReview";
 
@@ -58,6 +62,7 @@ function displayValue(value: string | number | null | undefined) {
 export default async function RequestPage({
   params,
 }: RequestPageProps) {
+  await requireAdmin();
   const { requestId } = await params;
   const supabase = createAdminClient();
 
@@ -117,6 +122,7 @@ export default async function RequestPage({
 
   return (
     <main className="mx-auto w-full max-w-3xl px-4 py-10 sm:px-6">
+      <SignOutButton />
       <Link href="/admin/requests" className="underline">
         ← Back to requests
       </Link>

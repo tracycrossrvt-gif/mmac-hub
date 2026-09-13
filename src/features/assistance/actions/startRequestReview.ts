@@ -3,8 +3,10 @@
 import { revalidatePath } from "next/cache";
 
 import { createAdminClient } from "@/lib/supabase/admin";
+import { requireAdmin } from "@/features/auth/server/requireAdmin";
 
 export async function startRequestReview(requestId: string) {
+  await requireAdmin();
   const supabase = createAdminClient();
 
   const { data: updatedRequest, error } = await supabase

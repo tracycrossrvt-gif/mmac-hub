@@ -1,6 +1,10 @@
 import Link from "next/link";
 
 import { createAdminClient } from "@/lib/supabase/admin";
+import { requireAdmin } from "@/features/auth/server/requireAdmin";
+import { SignOutButton } from "@/features/auth/components/SignOutButton";
+
+export const dynamic = "force-dynamic";
 
 type AssistanceRequestQueueItem = {
   id: string;
@@ -20,6 +24,7 @@ type AssistanceRequestQueueItem = {
 };
 
 export default async function RequestsPage() {
+  await requireAdmin();
   const supabase = createAdminClient();
 
   const { data: requests, error } = await supabase
@@ -49,6 +54,7 @@ export default async function RequestsPage() {
     return (
       <main className="mx-auto w-full max-w-4xl px-4 py-10 sm:px-6">
         <h1 className="text-3xl font-bold">Assistance Requests</h1>
+        <SignOutButton />
         <p className="mt-4">
           We couldn&apos;t load assistance requests.
         </p>
@@ -59,6 +65,7 @@ export default async function RequestsPage() {
   return (
     <main className="mx-auto w-full max-w-4xl px-4 py-10 sm:px-6">
       <div className="mb-8">
+        <SignOutButton />
         <p className="mb-2 text-sm font-medium uppercase tracking-wide">
           MMAC Operations
         </p>
