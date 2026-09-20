@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireAdmin } from "@/features/auth/server/requireAdmin";
 import { SignOutButton } from "@/features/auth/components/SignOutButton";
-import { startRequestReview } from "@/features/assistance/actions/startRequestReview";
+import { StatusTransitionForm } from "@/features/assistance/components/StatusTransitionForm";
 import { getRequestDetail } from "@/features/assistance/server/getRequestDetail";
 import { CaseSummary } from "@/features/assistance/components/CaseSummary";
 import { CaseAnimals } from "@/features/assistance/components/CaseAnimals";
@@ -25,12 +25,7 @@ export default async function RequestPage({ params }: { params: Promise<{ reques
     </div>
     <div className="space-y-8">
       <CaseSummary request={request} latest={events[0]} />
-      {request.status === "new" && <form action={async () => {
-        "use server";
-        await startRequestReview(request.id);
-      }}>
-        <button type="submit" className="rounded-md border px-4 py-2 font-medium">Start Review</button>
-      </form>}
+      <StatusTransitionForm requestId={request.id} status={request.status} version={request.status_version} />
       <InteractionForm requestId={request.id} />
       <CaseTimeline events={events} submittedAt={request.submitted_at} />
       <CaseAnimals animals={request.request_animals} />

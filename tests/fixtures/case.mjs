@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 
 export function caseFixture() {
   return {
-    id: randomUUID(), status: "under_review", created_at: "2026-01-01T12:00:00Z", submitted_at: "2026-01-01T12:00:00Z",
+    id: randomUUID(), status: "under_review", status_version: 0, created_at: "2026-01-01T12:00:00Z", submitted_at: "2026-01-01T12:00:00Z",
     help_summary: "Help requested for Roscoe and Pigeon.", stated_contribution_amount: 0,
     transportation_notes: "Needs a ride", additional_information: "Call after work", internal_notes: null,
     requester: { first_name: "Jamie", last_name: "Example", phone: "555-0101", email: "jamie@example.com", preferred_contact_method: null },
@@ -30,7 +30,7 @@ export function caseFixture() {
   };
 }
 export function eventFixture(overrides = {}) {
-  return { id: randomUUID(), event_type: "interaction", interaction_type: "call", contact_result: "left_message",
+  return { id: randomUUID(), event_type: "interaction", old_status: null, new_status: null, status_version: null, interaction_type: "call", contact_result: "left_message",
     case_outcome: "follow_up_needed", notes: "Left a message.", occurred_at: "2026-01-03T12:00:00Z",
     created_at: "2026-01-04T12:00:00Z", actor_label: "administrator@example.com", ...overrides };
 }

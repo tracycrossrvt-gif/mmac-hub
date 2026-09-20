@@ -40,9 +40,7 @@ function harness({ ids = adminId, user = null, verifyError = null, throwVerify =
     "@/lib/supabase/server": { createClient: async () => client },
     "@/lib/supabase/admin": { createAdminClient: () => {
       calls.privileged++;
-      return { from: () => ({ update: () => ({ eq: () => ({ eq: () => ({
-        select: () => ({ single: async () => ({ data: { status: "under_review" }, error: null }) }),
-      }) }) }) }) };
+      return { rpc: async () => ({ data: [{ status: "under_review", status_version: 1 }], error: null }) };
     } },
     "@supabase/ssr": { createServerClient: ssrFactory },
     "next/headers": { cookies: async () => cookieStore },
@@ -91,7 +89,7 @@ for (const [name, ids] of [["missing", null], ["empty", ""], ["blank", "  "],
   test(`${name} allowlist denies even a verified administrator before private writes`, async () => {
     const h = harness({ ids, user: { id: adminId } });
     const { startRequestReview } = h.load("src/features/assistance/actions/startRequestReview.ts");
-    await assert.rejects(startRequestReview(randomUUID()), { destination: "/admin/denied" });
+    await assert.rejects(startRequestReview(randomUUID(), 0), { destination: "/admin/denied" });
     assert.equal(h.calls.privileged, 0);
     assert.equal(h.calls.verification, 0);
   });
@@ -107,7 +105,7 @@ for (const [name, options, destination] of [
   test(`${name} cannot invoke Start Review directly`, async () => {
     const h = harness(options);
     await assert.rejects(h.load("src/features/assistance/actions/startRequestReview.ts")
-      .startRequestReview(randomUUID()), { destination });
+      .startRequestReview(randomUUID(), 0), { destination });
     assert.equal(h.calls.privileged, 0);
   });
   test(`${name} cannot read any protected page`, async () => {
@@ -121,10 +119,10 @@ for (const [name, options, destination] of [
   });
 }
 
-test("verified allowlisted user reaches the existing mutation", async () => {
+test("verified allowlisted user reaches the audited Start Review mutation", async () => {
   const h = harness({ user: { id: adminId } });
   const result = await h.load("src/features/assistance/actions/startRequestReview.ts")
-    .startRequestReview(randomUUID());
+    .startRequestReview(randomUUID(), 0);
   assert.equal(result.success, true);
   assert.equal(result.status, "under_review");
   assert.equal(h.calls.verification, 1);

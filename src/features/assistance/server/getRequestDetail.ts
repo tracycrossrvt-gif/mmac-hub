@@ -3,6 +3,7 @@ import "server-only";
 import { z } from "zod";
 import { requireAdmin } from "@/features/auth/server/requireAdmin";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { isStatusTransitionAllowed, requestStatuses } from "../statusWorkflow";
 import { caseOutcomes, interactionTypes } from "../interactionOptions";
 
 const text = z.string().nullable();
@@ -17,7 +18,7 @@ const prescreenSchema = z.object({
 });
 
 export const requestDetailSchema = z.object({
-  id: z.uuid(), status: z.string(), submitted_at: z.string(), created_at: z.string(),
+  id: z.uuid(), status: z.enum(requestStatuses), status_version: z.number().int().nonnegative(), submitted_at: z.string(), created_at: z.string(),
   help_summary: text, stated_contribution_amount: z.number().nullable(),
   transportation_notes: text, additional_information: text, internal_notes: text,
   requester: z.object({ first_name: z.string(), last_name: z.string(), phone: text,
@@ -38,16 +39,27 @@ export const requestDetailSchema = z.object({
   request_availability: z.array(z.object({ day_of_week: z.string(), availability_window: z.string(), notes: text })),
 });
 
+const eventFields = {
+  id: z.uuid(), notes: z.string(), occurred_at: z.string(), created_at: z.string(), actor_label: z.string(),
+};
 export const interactionEventSchema = z.object({
-  id: z.uuid(), event_type: z.literal("interaction"), interaction_type: z.enum(interactionTypes),
-  contact_result: text, case_outcome: z.enum(caseOutcomes).nullable(), notes: z.string(),
-  occurred_at: z.string(), created_at: z.string(), actor_label: z.string(),
+  ...eventFields, old_status: z.null(), new_status: z.null(), status_version: z.null(),
+  event_type: z.literal("interaction"), interaction_type: z.enum(interactionTypes),
+  contact_result: text, case_outcome: z.enum(caseOutcomes).nullable(),
 });
+
+export const statusEventSchema = z.object({
+  ...eventFields, event_type: z.literal("status_change"),
+  old_status: z.enum(requestStatuses), new_status: z.enum(requestStatuses), status_version: z.number().int().positive(),
+  interaction_type: z.null(), contact_result: z.null(), case_outcome: z.null(),
+}).refine((event) => isStatusTransitionAllowed(event.old_status, event.new_status), "Invalid status transition");
+export const caseEventSchema = z.discriminatedUnion("event_type", [interactionEventSchema, statusEventSchema]);
+export type CaseEvent = z.infer<typeof caseEventSchema>;
 
 export type RequestDetail = z.infer<typeof requestDetailSchema>;
 export type InteractionEvent = z.infer<typeof interactionEventSchema>;
 
-export function sortInteractions(events: InteractionEvent[]) {
+export function sortCaseEvents(events: CaseEvent[]) {
   return [...events].sort((a, b) => Date.parse(b.occurred_at) - Date.parse(a.occurred_at)
     || Date.parse(b.created_at) - Date.parse(a.created_at) || b.id.localeCompare(a.id));
 }
@@ -59,7 +71,7 @@ export async function getRequestDetail(requestId: string) {
   try {
     const supabase = createAdminClient();
     const { data, error } = await supabase.from("assistance_requests").select(`
-      id, status, submitted_at, created_at, help_summary, stated_contribution_amount,
+      id, status, status_version, submitted_at, created_at, help_summary, stated_contribution_amount,
       transportation_notes, additional_information, internal_notes,
       requester:people!assistance_requests_requester_person_id_fkey (
         first_name, last_name, phone, email, preferred_contact_method
@@ -86,21 +98,21 @@ export async function getRequestDetail(requestId: string) {
 
     // Page by immutable ID to avoid the API row cap silently truncating history.
     // Operational ordering is applied after collecting every page.
-    const events: InteractionEvent[] = [];
+    const events: CaseEvent[] = [];
     let beforeId: string | undefined;
     for (;;) {
       let query = supabase.from("assistance_request_events").select(
-        "id, event_type, interaction_type, contact_result, case_outcome, notes, occurred_at, created_at, actor_label",
+        "id, event_type, old_status, new_status, status_version, interaction_type, contact_result, case_outcome, notes, occurred_at, created_at, actor_label",
       ).eq("assistance_request_id", requestId).order("id", { ascending: false }).limit(200);
       if (beforeId) query = query.lt("id", beforeId);
       const { data: rows, error: historyError } = await query;
       if (historyError || !rows) throw new Error("History read failed");
-      const page = z.array(interactionEventSchema).parse(rows);
+      const page = z.array(caseEventSchema).parse(rows);
       events.push(...page);
       if (page.length < 200) break;
       beforeId = page[page.length - 1].id;
     }
-    return { request, events: sortInteractions(events) };
+    return { request, events: sortCaseEvents(events) };
   } catch {
     // Missing history is not an empty history, and a provider error is not a 404.
     throw new Error("Unable to load this case and its history. Please try again.");

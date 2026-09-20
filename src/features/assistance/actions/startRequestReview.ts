@@ -1,38 +1,10 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { transitionRequestStatus } from "./transitionRequestStatus";
 
-import { createAdminClient } from "@/lib/supabase/admin";
-import { requireAdmin } from "@/features/auth/server/requireAdmin";
-
-export async function startRequestReview(requestId: string) {
-  await requireAdmin();
-  const supabase = createAdminClient();
-
-  const { data: updatedRequest, error } = await supabase
-    .from("assistance_requests")
-    .update({
-      status: "under_review",
-    })
-    .eq("id", requestId)
-    .eq("status", "new")
-    .select("id, status")
-    .single();
-
-  if (error) {
-    console.error("Failed to start request review:", error);
-
-    return {
-      success: false as const,
-      message: "We couldn't start the review.",
-    };
-  }
-
-  revalidatePath("/admin/requests");
-  revalidatePath(`/admin/requests/${requestId}`);
-
-  return {
-    success: true as const,
-    status: updatedRequest.status,
-  };
+// Compatibility entry point: the shared action independently verifies the admin.
+// The reviewed version is required; never fetch a new version and silently retry.
+export async function startRequestReview(requestId: string, expectedVersion: number) {
+  return transitionRequestStatus({ requestId, expectedStatus: "new", expectedVersion,
+    newStatus: "under_review", reason: "" });
 }

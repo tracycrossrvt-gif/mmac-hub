@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
-import type { InteractionEvent, RequestDetail } from "../server/getRequestDetail";
+import type { CaseEvent, RequestDetail } from "../server/getRequestDetail";
+import { statusLabels } from "../statusWorkflow";
 import { interactionLabels } from "../interactionOptions";
 import { caseDate, displayCode, displayValue } from "./caseDisplay";
 
@@ -7,7 +8,7 @@ export function CaseField({ label, children }: { label: string; children: ReactN
   return <div><dt className="text-sm font-medium">{label}</dt><dd className="mt-1 whitespace-pre-wrap break-words">{children}</dd></div>;
 }
 
-export function CaseSummary({ request, latest }: { request: RequestDetail; latest?: InteractionEvent }) {
+export function CaseSummary({ request, latest }: { request: RequestDetail; latest?: CaseEvent }) {
   const days = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"];
   return <>
     <header className="border-b border-slate-300 pb-6">
@@ -41,7 +42,7 @@ export function CaseSummary({ request, latest }: { request: RequestDetail; lates
           <p className="mt-1 text-sm">Stated amount; payment has not been recorded here.</p>
         </CaseField>
         <CaseField label="Latest recorded activity">{latest
-          ? `${interactionLabels[latest.interaction_type]} · ${caseDate(latest.occurred_at)}`
+          ? `${latest.event_type === "status_change" ? `${statusLabels[latest.old_status]} → ${statusLabels[latest.new_status]}` : interactionLabels[latest.interaction_type]} · ${caseDate(latest.occurred_at)}`
           : `Request submitted · ${caseDate(request.submitted_at)}`}</CaseField>
       </dl>
     </section>

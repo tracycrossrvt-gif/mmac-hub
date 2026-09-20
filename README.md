@@ -326,3 +326,18 @@ interaction. The production build must exist before running it.
 
 Unit 3 is ready for review only after automated checks, and accepted only after the
 real database and browser checks. Commit/push and Unit 4 require separate approval.
+
+## Unit 4 — audited request status workflow
+
+Unit 4 replaces the direct Start Review update with a guarded, atomic transition RPC
+and adds reasoned administrator decisions to the existing case timeline. Existing
+interactions and public intake remain separate from status changes.
+
+**This code requires the new Unit 4 migration before use.** The migration is prepared,
+not applied during BUILD. Review live privileges first and coordinate code/migration
+rollout; accepted earlier migrations are unchanged. The earlier Unit 3 instruction
+that Start Review creates no status event applies only to the Unit 3 baseline.
+
+See [Unit 4 architecture and acceptance steps](docs/unit4-acceptance.md) for the
+privilege preflight, migration procedure, rollback/permission SQL tests, two-session
+concurrency test, browser workflow checks and exact repository-local commands.

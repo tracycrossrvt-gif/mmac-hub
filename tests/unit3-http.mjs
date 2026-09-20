@@ -16,7 +16,8 @@ const request = caseFixture();
 const approvedId = randomUUID();
 const otherId = randomUUID();
 const events = [];
-const traffic = { reads: 0, inserts: 0, publicWrites: 0 };
+const unit4 = process.argv.includes("--unit4");
+const traffic = { reads: 0, inserts: 0, publicWrites: 0, transitions: 0 };
 const users = new Map();
 function sessionCookie(id) {
   const user = { id, aud: "authenticated", role: "authenticated", email: "verified@example.com",
@@ -51,12 +52,32 @@ const mock = createServer(async (req, res) => {
       for await (const chunk of req) body += chunk;
       const payload = JSON.parse(body);
       traffic.inserts++;
-      events.push({ ...payload, id: randomUUID(), event_type: "interaction",
+      events.push({ ...payload, id: randomUUID(), event_type: "interaction", old_status: null, new_status: null, status_version: null,
         occurred_at: payload.occurred_at ?? new Date().toISOString(), created_at: new Date().toISOString() });
       return send(201, null);
     }
     traffic.reads++;
     return send(200, events);
+  }
+  if (url.pathname === "/rest/v1/rpc/transition_assistance_request_status" && unit4) {
+    let body = "";
+    for await (const chunk of req) body += chunk;
+    const payload = JSON.parse(body);
+    traffic.transitions++;
+    // Synthetic contract response only. SQL rules/atomicity are tested separately
+    // against PostgreSQL, not proven by this in-memory endpoint.
+    if (payload.p_expected_status !== request.status || payload.p_expected_version !== request.status_version) {
+      return send(409, { code: "PT409", message: "Stale case" });
+    }
+    const previous = request.status;
+    request.status = payload.p_new_status;
+    request.status_version++;
+    events.push({ id: randomUUID(), event_type: "status_change", assistance_request_id: request.id,
+      old_status: previous, new_status: request.status, status_version: request.status_version,
+      interaction_type: null, contact_result: null, case_outcome: null,
+      notes: payload.p_reason || "Review started.", actor_user_id: payload.p_actor_user_id,
+      actor_label: payload.p_actor_label, occurred_at: new Date().toISOString(), created_at: new Date().toISOString() });
+    return send(200, [{ status: request.status, status_version: request.status_version }]);
   }
   if (url.pathname === "/rest/v1/rpc/submit_public_assistance_request") {
     traffic.publicWrites++;
@@ -155,6 +176,31 @@ try {
   assert.match(await publicResponse.text(), /"success":true/);
   assert.equal(traffic.publicWrites, 1);
   console.log("PASS anonymous public intake still reaches its existing RPC (mocked)");
+  if (unit4) {
+    const decision = { requestId: request.id, expectedStatus: "under_review", expectedVersion: 0,
+      newStatus: "needs_info", reason: "HTTP decision reason", actor_user_id: otherId, actor_label: "Forged" };
+    for (const [cookie, destination] of [[null, "/admin/login"], [otherCookie, "/admin/denied"]]) {
+      const before = { ...traffic };
+      const denied = await callAction(detailRoute, "transitionRequestStatus", [decision], cookie);
+      assert.ok(denied.headers.get("x-action-redirect")?.startsWith(destination));
+      await denied.text();
+      assert.deepEqual(traffic, before);
+    }
+    const changed = await callAction(detailRoute, "transitionRequestStatus", [decision], approvedCookie);
+    assert.match(await changed.text(), /Status changed and recorded/);
+    assert.equal(request.status, "needs_info");
+    assert.equal(request.status_version, 1);
+    assert.equal(events[1].actor_user_id, approvedId);
+    assert.equal(events[1].actor_label, "verified@example.com");
+    const stale = await callAction(detailRoute, "transitionRequestStatus", [decision], approvedCookie);
+    assert.match(await stale.text(), /case changed after you opened/);
+    assert.equal(request.status_version, 1);
+    assert.equal(events.length, 2);
+    const mixed = await fetch(base + detailRoute, { headers: { Cookie: approvedCookie } });
+    const mixedHtml = await mixed.text();
+    for (const text of ["Under review → Needs information", "HTTP decision reason", "HTTP integration interaction"]) assert.ok(mixedHtml.includes(text), text);
+    console.log("PASS Unit 4 actual action transport: denial, verified actor, RPC result, stale feedback and mixed timeline reload (mock DB)");
+  }
   console.log("HTTP integration checks passed. This is not live database or browser acceptance.");
 } catch (error) {
   console.error(serverOutput.slice(-4000));
