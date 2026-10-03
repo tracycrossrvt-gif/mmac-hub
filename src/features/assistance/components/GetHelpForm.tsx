@@ -1,6 +1,6 @@
 "use client";
 
-
+import { useState } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
@@ -43,6 +43,9 @@ export function GetHelpForm() {
       additionalInformation: "",
     },
   });
+  const [submitResult, setSubmitResult] = useState<
+  Awaited<ReturnType<typeof submitGetHelpRequest>> | null
+>(null);
 
   const sex = useWatch({
     control,
@@ -60,8 +63,9 @@ export function GetHelpForm() {
   const onSubmit = async (data: GetHelpFormData) => {
   const result = await submitGetHelpRequest(data);
 
-  console.log("Get-help server result:", result);
+  setSubmitResult(result);
 };
+
   return (
     <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-10">
       {/* ABOUT YOU */}
@@ -576,6 +580,12 @@ export function GetHelpForm() {
           </div>
         </div>
       </section>
+
+      {submitResult && !submitResult.success && (
+  <p role="alert" className="text-sm">
+    {submitResult.message}
+  </p>
+)}
 
       <button
         type="submit"
