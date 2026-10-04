@@ -17,7 +17,7 @@ export function GetHelpForm() {
     register,
     handleSubmit,
     control,
-    formState: { errors },
+    formState: { errors, isSubmitting },
   } = useForm<GetHelpFormInput, unknown, GetHelpFormData>({
     resolver: zodResolver(getHelpSchema),
     defaultValues: {
@@ -587,12 +587,22 @@ export function GetHelpForm() {
   </p>
 )}
 
-      <button
-        type="submit"
-        className="w-full rounded-md border px-4 py-3 font-medium sm:w-auto"
-      >
-        Submit Request
-      </button>
+{submitResult?.success && (
+  <div role="status" className="rounded-md border p-4">
+    <p className="font-medium">Your request was submitted successfully.</p>
+    <p className="mt-1 text-sm">
+      Macon Moves Animal Care has received your request and will review it.
+    </p>
+  </div>
+)}
+
+<button
+  type="submit"
+  disabled={isSubmitting || submitResult?.success === true}
+  className="w-full rounded-md border px-4 py-3 font-medium disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
+>
+  {isSubmitting ? "Submitting…" : "Submit Request"}
+</button>
     </form>
   );
 }
