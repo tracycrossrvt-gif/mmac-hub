@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
@@ -12,11 +12,21 @@ import {
 
 import { submitGetHelpRequest } from "@/features/assistance/actions/submitGetHelpRequest";
 
+import {
+  beginSubmissionAttempt, blockSubmissionAttempt,
+  finishSubmissionAttempt, readSubmissionAttempt, verifyPendingAttempt,
+  type PendingSubmissionAttempt, type PublicSubmissionAttempt,
+} from "@/features/assistance/lib/publicSubmissionAttempt";
+
+const storageMessage = "We cannot safely save or restore this submission in this browser. No new attempt will be sent. If you already submitted, do not start another request for the same attempt.";
+const retryMessage = "We could not confirm receipt. Keep this tab open and use Retry this submission to send the same saved details. Do not start another request for this attempt.";
+
 export function GetHelpForm() {
   const {
     register,
     handleSubmit,
     control,
+    reset,
     formState: { errors, isSubmitting },
   } = useForm<GetHelpFormInput, unknown, GetHelpFormData>({
     resolver: zodResolver(getHelpSchema),
@@ -47,6 +57,33 @@ export function GetHelpForm() {
   Awaited<ReturnType<typeof submitGetHelpRequest>> | null
 >(null);
 
+  const [attempt, setAttempt] = useState<PublicSubmissionAttempt | null>(null);
+  const [ready, setReady] = useState(false);
+  const [storageError, setStorageError] = useState<string | null>(null);
+  const [sending, setSending] = useState(false);
+  const inFlight = useRef(false);
+  const currentAttempt = useRef<PublicSubmissionAttempt | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    // Storage is browser-only. Defer hydration to avoid SSR access and disable
+    // submission until restoration has completed.
+    queueMicrotask(() => {
+      if (cancelled) return;
+      try {
+        const saved = readSubmissionAttempt(window.sessionStorage);
+        currentAttempt.current = saved;
+        setAttempt(saved);
+        if (saved && saved.state !== "complete") reset(saved.submission.data, { keepDefaultValues: true });
+        if (saved?.state === "complete") setSubmitResult({ success: true, requestId: saved.requestId, status: "new" });
+      } catch {
+        setStorageError(storageMessage);
+      }
+      setReady(true);
+    });
+    return () => { cancelled = true; };
+  }, [reset]);
+
   const sex = useWatch({
     control,
     name: "sex",
@@ -60,14 +97,62 @@ export function GetHelpForm() {
   const shouldShowHeatCycle =
     sex === "female" && alteredStatus === "unaltered";
 
-  const onSubmit = async (data: GetHelpFormData) => {
-  const result = await submitGetHelpRequest(data);
+  const sendAttempt = async (pending: PendingSubmissionAttempt) => {
+    if (inFlight.current || storageError) return;
+    inFlight.current = true;
+    setSending(true);
+    setSubmitResult(null);
+    try {
+      const submission = verifyPendingAttempt(window.sessionStorage, pending);
+      let result: Awaited<ReturnType<typeof submitGetHelpRequest>>;
+      try {
+        result = await submitGetHelpRequest(submission);
+      } catch {
+        // A lost Server Action response may follow a successful database commit.
+        setSubmitResult({ success: false, code: "unconfirmed", message: retryMessage });
+        return;
+      }
+      setSubmitResult(result);
+      if (result.success) {
+        reset(); // Clear sensitive DOM and React state even if storage fails.
+        const completed: PublicSubmissionAttempt = { version: 1, state: "complete",
+          submissionId: pending.submission.submissionId, requestId: result.requestId };
+        currentAttempt.current = completed;
+        setAttempt(completed);
+        finishSubmissionAttempt(window.sessionStorage, pending, result.requestId);
+      } else if (result.code === "submission_conflict" || result.code === "validation") {
+        // A later validation failure cannot disprove an earlier successful write.
+        // Keep the original attempt; never unlock a fresh submission here.
+        const blocked = blockSubmissionAttempt(window.sessionStorage, pending);
+        currentAttempt.current = blocked;
+        setAttempt(blocked);
+      }
+    } catch {
+      setStorageError(storageMessage);
+    } finally {
+      inFlight.current = false;
+      setSending(false);
+    }
+  };
 
-  setSubmitResult(result);
-};
+  const onSubmit = async (data: GetHelpFormData) => {
+    if (!ready || storageError || currentAttempt.current || inFlight.current) return;
+    let pending: PendingSubmissionAttempt;
+    try {
+      pending = beginSubmissionAttempt(window.sessionStorage, data, () => crypto.randomUUID());
+      currentAttempt.current = pending;
+      setAttempt(pending);
+    } catch {
+      setStorageError(storageMessage);
+      return;
+    }
+    await sendAttempt(pending);
+  };
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-10">
+    <form onSubmit={(event) => void handleSubmit(onSubmit)(event)} noValidate className="space-y-10">
+      <fieldset disabled={!ready || sending || !!attempt || !!storageError || submitResult?.success === true} className="space-y-10">
+      <legend className="sr-only">Assistance request details</legend>
       {/* ABOUT YOU */}
       <section aria-labelledby="about-you-heading">
         <h2 id="about-you-heading" className="text-xl font-semibold">
@@ -581,6 +666,16 @@ export function GetHelpForm() {
         </div>
       </section>
 
+      </fieldset>
+      {storageError && <p role="alert" className="text-sm">{submitResult?.success
+        ? "Your request was received, but this browser could not safely save the confirmation or clear saved details. Close this tab. Do not submit this request again."
+        : storageError}</p>}
+      {attempt?.state === "pending" && !sending && !storageError && !submitResult?.success && (
+        <p role="status" className="text-sm">{retryMessage}</p>
+      )}
+      {attempt?.state === "conflict" && !storageError && (
+        <p role="alert" className="text-sm">The saved submission could not be safely confirmed. It has been stopped to avoid a duplicate. Do not start another request for this attempt.</p>
+      )}
       {submitResult && !submitResult.success && (
   <p role="alert" className="text-sm">
     {submitResult.message}
@@ -596,13 +691,21 @@ export function GetHelpForm() {
   </div>
 )}
 
+{attempt?.state === "pending" && !submitResult?.success ? (
+  <button type="button" disabled={sending || !!storageError}
+    onClick={() => void sendAttempt(attempt)}
+    className="w-full rounded-md border px-4 py-3 font-medium disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto">
+    {sending ? "Submitting…" : "Retry this submission"}
+  </button>
+) : (
 <button
   type="submit"
-  disabled={isSubmitting || submitResult?.success === true}
+  disabled={!ready || isSubmitting || sending || !!storageError || !!attempt || submitResult?.success === true}
   className="w-full rounded-md border px-4 py-3 font-medium disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
 >
   {isSubmitting ? "Submitting…" : "Submit Request"}
 </button>
+)}
     </form>
   );
 }

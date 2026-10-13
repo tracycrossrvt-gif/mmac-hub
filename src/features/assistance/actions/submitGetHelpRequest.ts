@@ -2,10 +2,10 @@
 
 import { z } from "zod";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { getHelpSchema } from "@/features/assistance/validation/getHelpSchema";
+import { getHelpSubmissionSchema } from "@/features/assistance/validation/getHelpSubmissionSchema";
 
 export type SubmitGetHelpResult =
-  | { success: false; message: string }
+  | { success: false; code: "validation" | "submission_conflict" | "unconfirmed"; message: string }
   | { success: true; requestId: string; status: "new" };
 
 const createdRequestSchema = z.array(z.object({
@@ -13,26 +13,28 @@ const createdRequestSchema = z.array(z.object({
   status: z.literal("new"),
 })).length(1);
 
-const unconfirmedMessage = "We couldn't confirm whether your request was received. Please contact MMAC before submitting again to avoid a duplicate request.";
+const unconfirmedMessage = "We couldn't confirm whether your request was received. Use “Retry this submission” to check or send the same request. Do not start another request for this attempt.";
 
 export async function submitGetHelpRequest(input: unknown): Promise<SubmitGetHelpResult> {
   try {
-    const result = getHelpSchema.safeParse(input);
+    const result = getHelpSubmissionSchema.safeParse(input);
 
     if (!result.success) {
       return {
         success: false,
+        code: "validation",
         message: "Please review the information you submitted.",
       };
     }
 
-    const data = result.data;
+    const { submissionId, data } = result.data;
     const supabase = createAdminClient();
 
     const ageYears = data.age === undefined ? null : Number(data.age);
 
     const { data: createdRequest, error } = await supabase
       .rpc("submit_public_assistance_request", {
+        p_submission_id: submissionId,
         p_first_name: data.firstName,
         p_last_name: data.lastName,
         p_phone: data.phone ?? "",
@@ -58,16 +60,21 @@ export async function submitGetHelpRequest(input: unknown): Promise<SubmitGetHel
       });
 
     if (error) {
+      if (error.code === "PT409") {
+        console.error("Get-help submission identifier conflict.");
+        return { success: false, code: "submission_conflict", message:
+          "This submission could not be confirmed because its saved details do not match. Do not start another request for this attempt." };
+      }
       // Fixed diagnostics only: provider details can contain submitted private data.
       console.error("Get-help submission returned an RPC error.");
-      return { success: false, message: unconfirmedMessage };
+      return { success: false, code: "unconfirmed", message: unconfirmedMessage };
     }
 
     const confirmed = createdRequestSchema.safeParse(createdRequest);
 
     if (!confirmed.success) {
       console.error("Get-help submission returned an unconfirmed receipt.");
-      return { success: false, message: unconfirmedMessage };
+      return { success: false, code: "unconfirmed", message: unconfirmedMessage };
     }
 
     const created = confirmed.data[0];
@@ -78,8 +85,8 @@ export async function submitGetHelpRequest(input: unknown): Promise<SubmitGetHel
     };
   } catch {
     // A thrown/transport error is not proof that the database rolled back.
-    // No automatic retry: durable submission idempotency is a later change.
+    // The browser retains the same identifier and payload for an explicit retry.
     console.error("Get-help submission raised an unexpected error.");
-    return { success: false, message: unconfirmedMessage };
+    return { success: false, code: "unconfirmed", message: unconfirmedMessage };
   }
 }

@@ -1,8 +1,10 @@
 # Slice 1: public submission contract hardening
 
-The public form and database RPC are unchanged. The shared Zod schema still
-accepts the existing single-animal form shape, and its parsed output can be
-validated again by the Server Action. No dependencies or migrations are added.
+The shared Zod schema preserves the existing single-animal form shape. The Server
+Action now accepts a validated `{ submissionId, data }` envelope. Durable replay
+protection adds a private receipt table and a required UUID parameter to the RPC.
+See [idempotency acceptance](slice1-idempotency-acceptance.md) for the migration,
+privacy lifecycle, rollout and test instructions. No npm dependencies are added.
 
 ## Rules grounded in the current implementation
 
@@ -27,7 +29,7 @@ validated again by the Server Action. No dependencies or migrations are added.
 ## Results and failures
 
 The explicit return union stays compatible with GetHelpForm: either
-`{ success: false, message }` or `{ success: true, requestId, status: "new" }`.
+`{ success: false, code, message }` or `{ success: true, requestId, status: "new" }`.
 Success requires exactly one RPC result with a valid request UUID and the RPC's
 documented `new` status. Extra internal IDs are not returned to the browser.
 
@@ -35,12 +37,13 @@ Invalid input never creates a privileged client. RPC errors, absent/malformed
 receipts and unexpected exceptions produce conservative unconfirmed-submission
 feedback. They do not assert rollback or promise a safe retry. Only fixed error
 categories are logged; database details and submitted data are not logged.
-There are no automatic retries. Durable idempotency remains a later chunk.
+There are no automatic retries. Explicit retries retain the same UUID and payload;
+the database receipt makes matching replays safe and rejects changed payloads.
 
 An exception caught inside the action can be converted to this result. Loss of
 the action response on its way to the browser cannot be caught by the server
-afterward; client transport-error handling and durable retry recovery remain
-separate work. This change does not redesign the accepted form UI.
+afterward; the form catches transport exceptions and retains its pending attempt
+for explicit retry. Storage failures and conflicts block further submission.
 
 ## Validation
 
@@ -59,5 +62,5 @@ The focused suite executes the actual schema/action through the existing loader,
 with only Supabase I/O stubbed. The HTTP harness uses synthetic Auth/REST; neither
 is proof of live persistence. On the intended test project, submit a fictional
 request, verify its single-animal records and `new`/version-zero state, and check
-the accepted form's pending/success/failure presentation. Do not deliberately
-repeat a live submission after an uncertain response: this chunk is not idempotent.
+the accepted form's pending/success/failure presentation. Use fictional data to test a lost response followed by an explicit same-ID retry.
+Never create a new identifier to recover an uncertain attempt.

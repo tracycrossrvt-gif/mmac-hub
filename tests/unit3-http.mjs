@@ -80,6 +80,10 @@ const mock = createServer(async (req, res) => {
     return send(200, [{ status: request.status, status_version: request.status_version }]);
   }
   if (url.pathname === "/rest/v1/rpc/submit_public_assistance_request") {
+    let body = "";
+    for await (const chunk of req) body += chunk;
+    const payload = JSON.parse(body);
+    assert.match(payload.p_submission_id, /^[0-9a-f-]{36}$/);
     traffic.publicWrites++;
     return send(200, [{ assistance_request_id: randomUUID(), status: "new" }]);
   }
@@ -172,7 +176,7 @@ try {
   const intake = { firstName: "Public", lastName: "Fixture", phone: "555-0102", email: "",
     animalName: "Test pet", species: "dog", sex: "male", alteredStatus: "altered", age: "2",
     helpSummary: "Fictional test request", rabiesStatus: "current", preventionUseStatus: "unknown", availableDays: [] };
-  const publicResponse = await callAction("/get-help", "submitGetHelpRequest", [intake]);
+  const publicResponse = await callAction("/get-help", "submitGetHelpRequest", [{ submissionId: randomUUID(), data: intake }]);
   assert.match(await publicResponse.text(), /"success":true/);
   assert.equal(traffic.publicWrites, 1);
   console.log("PASS anonymous public intake still reaches its existing RPC (mocked)");

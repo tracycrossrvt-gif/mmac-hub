@@ -4,6 +4,7 @@ import { appLoader } from "./helpers/load-app.mjs";
 
 const actionPath = "src/features/assistance/actions/submitGetHelpRequest.ts";
 const schemaPath = "src/features/assistance/validation/getHelpSchema.ts";
+const submissionId = "7b828e94-bc49-435b-a1dc-f2d4d01f6fe0";
 const requestId = "bc9db68e-6eae-4aca-a22e-3571ae10e8b4";
 const receipt = { assistance_request_id: requestId, status: "new" };
 const privateDetail = "PRIVATE_DATABASE_DETAIL_AND_SUBMITTED_CONTACT";
@@ -35,7 +36,9 @@ function harness(options = {}) {
       } };
     } },
   });
-  return { calls, schema: load(schemaPath).getHelpSchema, submit: load(actionPath).submitGetHelpRequest };
+  const rawSubmit = load(actionPath).submitGetHelpRequest;
+  return { calls, schema: load(schemaPath).getHelpSchema, rawSubmit,
+    submit: (data) => rawSubmit({ submissionId, data }) };
 }
 
 test("valid anonymous submission uses only the existing RPC and returns a minimal confirmed receipt", async () => {
@@ -46,7 +49,7 @@ test("valid anonymous submission uses only the existing RPC and returns a minima
   assert.equal(h.calls.rpc.length, 1);
   assert.equal(h.calls.rpc[0].name, "submit_public_assistance_request");
   assert.deepEqual(plain(h.calls.rpc[0].payload), {
-    p_first_name: "Jamie", p_last_name: "Example", p_phone: "555-0102", p_email: "",
+    p_submission_id: submissionId, p_first_name: "Jamie", p_last_name: "Example", p_phone: "555-0102", p_email: "",
     p_animal_name: "Roscoe", p_species: "dog", p_sex: "male", p_altered_status: "unaltered",
     p_age_years: 2.5, p_breed: "Mixed", p_color_description: "Brown",
     p_help_summary: "Help with veterinary care", p_stated_contribution_amount: 25,
@@ -103,7 +106,7 @@ for (const [label, value] of [
     const h = harness();
     assert.equal(h.schema.safeParse(value).success, false);
     const result = await h.submit(value);
-    assert.deepEqual(plain(result), { success: false, message: "Please review the information you submitted." });
+    assert.deepEqual(plain(result), { success: false, code: "validation", message: "Please review the information you submitted." });
     assert.equal(h.calls.clients, 0);
     assert.equal(h.calls.rpc.length, 0);
   });
@@ -153,12 +156,37 @@ for (const [label, options] of [
     const h = harness(options);
     const result = await h.submit(input());
     assert.equal(result.success, false);
-    assert.deepEqual(Object.keys(result).sort(), ["message", "success"]);
+    assert.deepEqual(Object.keys(result).sort(), ["code", "message", "success"]);
     assert.match(result.message, /couldn't confirm whether your request was received/);
-    assert.match(result.message, /before submitting again/);
+    assert.match(result.message, /Retry this submission/);
+    assert.equal(result.code, "unconfirmed");
     assert.doesNotMatch(JSON.stringify(result), new RegExp(privateDetail));
     assert.doesNotMatch(JSON.stringify(logger.mock.calls.map((call) => call.arguments)), new RegExp(privateDetail));
     assert.equal(h.calls.clients, 1);
     assert.equal(h.calls.rpc.length, options.throwClient ? 0 : 1);
   });
 }
+
+for (const envelope of [null, {}, { data: input() }, { submissionId: "bad", data: input() }, input()]) {
+  test("invalid or legacy submission envelope is rejected before I/O: " + JSON.stringify(envelope).slice(0,45), async () => {
+    const h = harness();
+    assert.equal((await h.rawSubmit(envelope)).code, "validation");
+    assert.equal(h.calls.clients, 0);
+  });
+}
+
+test("identifier mismatch is a safe classified conflict; no retry or raw provider detail", async (t) => {
+  const logger = t.mock.method(console, "error", () => {});
+  const h = harness({ response: { data: null, error: { code: "PT409", message: privateDetail } } });
+  const result = await h.submit(input());
+  assert.equal(result.success, false);
+  assert.equal(result.code, "submission_conflict");
+  assert.equal(h.calls.rpc.length, 1);
+  assert.doesNotMatch(JSON.stringify([result, logger.mock.calls.map(c => c.arguments)]), new RegExp(privateDetail));
+});
+
+test("repeat action calls forward the identical identifier and normalized payload", async () => {
+  const h = harness();
+  assert.deepEqual(plain(await h.submit(input())), plain(await h.submit(input())));
+  assert.deepEqual(plain(h.calls.rpc[0]), plain(h.calls.rpc[1]));
+});

@@ -7,7 +7,7 @@ const root = path.resolve(import.meta.dirname, "../..");
 const requireModule = createRequire(import.meta.url);
 
 // Execute actual TS/TSX source with framework/database I/O supplied by each test.
-export function appLoader(mocks = {}, environment = {}) {
+export function appLoader(mocks = {}, environment = {}, runtime = {}) {
   const cache = new Map();
   function load(file) {
     const absolute = path.resolve(root, file);
@@ -31,7 +31,7 @@ export function appLoader(mocks = {}, environment = {}) {
       return requireModule(specifier);
     }
     vm.runInNewContext(compiled, { exports: loadedModule.exports, module: loadedModule, require: localRequire,
-      process: { env: environment }, console, FormData, Date }, { filename: absolute });
+      process: { env: environment }, console, FormData, Date, ...runtime }, { filename: absolute });
     return loadedModule.exports;
   }
   return load;
