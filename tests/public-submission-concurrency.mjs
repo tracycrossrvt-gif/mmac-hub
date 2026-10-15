@@ -28,7 +28,7 @@ function sql(statement) {
   return r.stdout.trim();
 }
 assert.equal(sql("select current_database();"), database);
-assert.equal(sql("select coalesce(inet_server_addr()::text in ('127.0.0.1','::1'),true);"), "t");
+assert.equal(sql("select coalesce(host(inet_server_addr()) in ('127.0.0.1','::1'),false);"), "t");
 assert.equal(sql("select to_regclass('public.public_assistance_submission_receipts') is not null;"), "t", "Apply migrations to the DISPOSABLE database first");
 const tables = ["people","households","household_members","animals","assistance_requests","request_animals","prescreens","request_availability","public_assistance_submission_receipts"];
 const counts = () => JSON.parse(sql("select json_build_array(" + tables.map(t => `(select count(*) from public.${t})`).join(",") + ");"));
