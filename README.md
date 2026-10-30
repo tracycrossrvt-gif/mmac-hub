@@ -1,55 +1,60 @@
 # MMAC Hub
 
-MMAC Hub is a full-stack operations platform and public website for Macon Moves Animal Care, a 501(c)(3) animal-welfare nonprofit serving rural communities across western North Carolina and north Georgia.
+**A full-stack assistance intake and case-management application for Macon Moves Animal Care (MMAC).**
 
-The platform is designed to reduce administrative burden while supporting the organization’s real-world workflows across animal-care assistance, community cat/TNR work, vaccine clinics, volunteer coordination, resource navigation, forms and documents, and nonprofit financial operations.
+[View source repository](https://github.com/tracycrossrvt-gif/mmac-hub) · [Explore the MMAC product case study](https://dev-portfolio-woad-seven.vercel.app/case-studies/mmac-hub)
 
-## Product Goals
+> **Project status:** In active development. The primary implementation and review work is on [`round-5-secure-admin-review`](https://github.com/tracycrossrvt-gif/mmac-hub/tree/round-5-secure-admin-review); `main` currently reflects an earlier foundation. The case-study link is not a live demo of the admin application.
 
-- Make it easy for community members to ask for help
-- Give staff a clear operational view of requests, care cases, colonies, clinics, and finances
-- Support scarce-capacity coordination without exposing public appointment inventory
-- Keep veterinary clinical records appropriately separated from ordinary coordination records
-- Preserve cash, check, card, donation, grant, and expense activity without forcing a single payment method
-- Support low-friction mobile use in rural environments
-- Keep the system simple enough that it reduces work instead of creating more of it
+## The problem
 
-## Core Domains
+Community animal-welfare assistance involves more than collecting a form. Requests must connect people, animals, services, prescreening information, authorized reviewers, and a trustworthy record of decisions. MMAC Hub is designed to reduce manual coordination while keeping sensitive administrative actions under server-side control.
 
-- Public website and education
-- Assistance requests and care cases
-- Community cat / TNR management
-- Community clinic planning and clinic-day workflow
-- Forms, e-signatures, and document archive
-- Volunteer and provider coordination
-- Resource directory and service areas
-- Financial operations and nonprofit reporting
+## Implemented in the active development branch
+
+- **Public assistance intake:** Structured request submission, input validation, and submission feedback states.
+- **Relational data foundation:** PostgreSQL/Supabase tables for people, households, animals, assistance requests, services, prescreening, and related records.
+- **Restricted administration:** Supabase Auth sessions and server-side authorization using an allowlist of verified user IDs.
+- **Request review:** Authorized administrators can inspect incoming requests and associated details.
+- **Case interaction timeline:** Append-only interaction records with verified actor attribution.
+- **Audited status workflow:** Defined request-status transitions with status history recorded as part of the workflow.
+- **Reliability checks:** TypeScript and lint checks, focused automated tests, and manual acceptance verification during development.
+
+## Engineering decisions
+
+**Server authority over sensitive workflows.** Permissions and status-transition rules are enforced on the backend rather than trusting a client-provided role or state.
+
+**Traceability as a product requirement.** Review actions and workflow changes are modeled so administrators can understand what happened and who performed an action.
+
+**Intake before expansion.** The MVP prioritizes reliable public submissions and secure request review over building every future nonprofit operations module at once.
 
 ## Technology
 
-- Next.js
-- TypeScript
-- Tailwind CSS
-- PostgreSQL via Supabase
-- Supabase Auth
-- Supabase Storage
-- Supabase Realtime
-- React Hook Form
-- Zod
-- Vercel
+- Next.js App Router, React, TypeScript, Tailwind CSS
+- Supabase Auth and PostgreSQL
+- Server-side actions and relational database migrations
+- Node.js tooling, ESLint, and focused automated tests
 
-## Architecture
+## Planned product areas — not yet implemented in the MVP
 
-MMAC Hub is being built as a modular monolith: one application with clearly separated operational domains.
+Broader clinic coordination, community cat/TNR workflows, volunteer and partner management, resource navigation, document workflows, and nonprofit financial reporting are part of the longer-term product vision. Their inclusion here does **not** imply that these modules are production-ready.
 
-Shared entities such as people, animals, organizations, and geography connect the system, while clinical, financial, and document data retain stricter security and integrity boundaries.
+## Local development
 
-The product is designed around one guiding rule:
+This project uses environment-specific Supabase configuration. Refer to `.env.example` and the repository's development instructions before running locally; never commit credentials or production secrets.
 
-> The system should reduce administrative work, not create it.
+```bash
+npm install
+npm run dev
+```
 
-## Status
+Run available verification commands from `package.json` before deploying changes.
 
-In active development.
+## Role and approach
 
-Current phase: application scaffold and backend foundation.
+I am developing MMAC Hub from operational problem discovery through data modeling, frontend flows, server-side authorization, and workflow reliability. My veterinary operations background helps identify real-world constraints, while the implementation emphasizes maintainable software and explicit, testable rules.
+
+## Author
+
+**Tracy Cross** — Software Developer  
+[Portfolio](https://dev-portfolio-woad-seven.vercel.app/) · [GitHub](https://github.com/tracycrossrvt-gif) · [LinkedIn](https://www.linkedin.com/in/tracy-cross-dev/)
