@@ -1,9 +1,21 @@
 -- READ ONLY. Run as the database owner BEFORE applying Unit 4, and again afterward.
 -- Save these results for review. Migration history is not proof of live privileges.
--- Before: service_role UPDATE(status) is expected from the known column grant.
+-- Before the prerequisite: service_role UPDATE(status) is the known column grant.
+-- After the prerequisite: service_role retains request SELECT only.
 -- Unexpected table UPDATE, role memberships, status INSERT, or audit-field INSERT
 -- must be reviewed separately. After: direct status/version writes must all be false.
 select current_user as inspecting_role, version() as database_version;
+
+-- Provenance: defaults affect newly created objects, not existing-table ACLs.
+-- Supabase bootstrap may supply broad defaults that bare PostgreSQL lacks.
+select pg_get_userbyid(defaclrole) as creating_role,
+  case when defaclnamespace = 0 then '(global)'
+       else defaclnamespace::regnamespace::text end as schema_name,
+  defaclobjtype, defaclacl
+from pg_default_acl order by 1, 2, 3;
+
+select rolname, rolsuper, rolinherit, rolcreaterole, rolbypassrls
+from pg_roles where rolname in ('anon', 'authenticated', 'service_role');
 
 select r.rolname, c.relname, pg_get_userbyid(c.relowner) as owner,
   c.relrowsecurity as rls_enabled, c.relacl,

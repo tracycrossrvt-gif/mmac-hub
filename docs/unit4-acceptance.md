@@ -48,6 +48,13 @@ SQL structure assertions in Node are not execution tests for the migration.
 
 ## Required privilege inspection BEFORE migration
 
+Fresh replay now includes `20260919000000_normalize_assistance_request_privileges.sql`
+before Unit 4. It removes automatic request-table grants and retains service-role
+SELECT only. See [the prerequisite handoff](slice1-privilege-correction.md) for the
+fresh/local procedure and the separate approval gate for existing migration histories.
+The original coordinated Unit 4 rollout below is not an instruction to replay Unit 4
+in an environment where it is already recorded.
+
 1. In the correct **development** project's SQL Editor, run the read-only
    `supabase/tests/unit4_privileges.sql` as the database owner. Save its results.
    Alternatively, using an already-secured development psql connection:
@@ -58,7 +65,8 @@ SQL structure assertions in Node are not execution tests for the migration.
 
 2. Review effective column/table permissions, role memberships, owners, RLS policies,
    triggers and executable SECURITY DEFINER functions. Expected repository state:
-   service_role has a column-level `UPDATE(status)` grant; browser roles cannot mutate
+   before the new prerequisite, service_role has the old column-level `UPDATE(status)`
+   grant; after it, service_role has request SELECT only. Browser roles cannot mutate
    case data; service_role can read requests/history and insert only interaction columns.
    Inspect definitions of any extra functions/views/triggers that might write request
    status or history; the migration cannot prove absence of arbitrary alternate paths.

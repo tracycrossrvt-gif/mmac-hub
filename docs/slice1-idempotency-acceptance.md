@@ -70,6 +70,11 @@ self-service button to discard an uncertain submission and create another.
 
 ## Local database testing (never production)
 
+Fresh Supabase startup must include the request-table privilege prerequisite before
+Unit 4. Automatic Supabase grants are broader than the bare PostgreSQL fixture below;
+RLS alone does not remove them. See [privilege correction and Windows handoff](slice1-privilege-correction.md).
+Existing migration histories require separate review; do not reset a populated database.
+
 Use a disposable LOCAL PostgreSQL database with the same major version as Supabase.
 Inspect target identity first. Set `PGHOST=127.0.0.1` (or a local Unix socket),
 `PGDATABASE=mmac_idempotency_test_<name>` and secure local authentication. Do not

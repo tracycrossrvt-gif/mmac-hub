@@ -109,7 +109,49 @@ set local role authenticated;
 select pg_temp.expect_error($q$select * from public.assistance_request_events$q$, '42501');
 select pg_temp.expect_error($q$select pg_temp.add_event('note', null)$q$, '42501');
 reset role;
-select pg_temp.expect_error($q$delete from public.assistance_requests where id = current_setting('mmac.test_request')::uuid$q$, '23503');
-select pg_temp.expect_error($q$delete from auth.users where id = current_setting('mmac.test_actor')::uuid$q$, '23503');
+-- PostgreSQL 18 reports RESTRICT deletion failures as 23001; PG17 uses 23503.
+-- Scope that distinction to these two deletes. Missing-parent INSERT tests above
+-- still require 23503; no general SQLSTATE allowlist or exception suppression.
+create function pg_temp.expect_event_restrict_delete(statement text, expected_constraint text, parent regclass)
+returns void language plpgsql as $$
+declare
+  expected_state text := case when current_setting('server_version_num')::integer >= 180000
+    then '23001' else '23503' end;
+  actual_constraint text;
+  actual_schema text;
+  actual_table text;
+begin
+  if not exists (select 1 from pg_constraint
+    where conrelid = 'public.assistance_request_events'::regclass
+      and conname = expected_constraint and confrelid = parent
+      and contype = 'f' and confdeltype = 'r' and convalidated) then
+    raise exception 'Expected validated event RESTRICT foreign key: %', expected_constraint;
+  end if;
+  begin
+    execute statement;
+  exception when others then
+    get stacked diagnostics actual_constraint = CONSTRAINT_NAME,
+      actual_schema = SCHEMA_NAME, actual_table = TABLE_NAME;
+    if sqlstate = expected_state and actual_constraint = expected_constraint
+       and actual_schema = 'public' and actual_table = 'assistance_request_events' then
+      return;
+    end if;
+    raise;
+  end;
+  raise exception 'Expected RESTRICT deletion failure but statement succeeded';
+end; $$;
+
+select pg_temp.expect_event_restrict_delete(
+  $q$delete from public.assistance_requests where id = current_setting('mmac.test_request')::uuid$q$,
+  'assistance_request_events_assistance_request_id_fkey', 'public.assistance_requests');
+select pg_temp.expect_event_restrict_delete(
+  $q$delete from auth.users where id = current_setting('mmac.test_actor')::uuid$q$,
+  'assistance_request_events_actor_user_id_fkey', 'auth.users');
+select pg_temp.assert_true(exists(select 1 from public.assistance_requests
+  where id = current_setting('mmac.test_request')::uuid), 'referenced request retained');
+select pg_temp.assert_true(exists(select 1 from auth.users
+  where id = current_setting('mmac.test_actor')::uuid), 'referenced actor retained');
+select pg_temp.assert_true((select count(*) = 20 from public.assistance_request_events
+  where assistance_request_id = current_setting('mmac.test_request')::uuid), 'all history retained after rejected deletes');
 select 'Unit 3 database assertions passed; rolling back fixtures.' as result;
 rollback;
