@@ -105,6 +105,7 @@ These are not numbers. Do not add figures.
 Navy background, white text.
 
 - **Logo**, plus the line "Serving Macon, Jackson, and Rabun Counties."
+  - Logo sits on a small sand (#E8E2D6) rounded badge — the logo's magenta text has poor contrast on navy.
 - **Contact:**
   - phone (as a `tel:` link)
   - email (as a `mailto:` link)
@@ -215,7 +216,7 @@ Keep the existing fields, validation and submission logic exactly as they are. *
 
 | File | Description | Target |
 |---|---|---|
-| `public/images/logo.png` | MMAC logo, ideally with a transparent background | 400px wide or more |
+| `public/images/logo.png` | Transparent background (pink removed from MMAC's 400×400 square; original file still preferred). | 400px wide or more |
 | `public/images/hero.jpg` | A kitten (no person). Subject placement and overlay per the image check. | About 2000px wide, under 500 KB |
 | `public/images/mountains.jpg` | Wide landscape of the local mountains | About 1600px wide, under 400 KB |
 

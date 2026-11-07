@@ -141,4 +141,4 @@ Things noticed during a step but out of scope. Triage these between steps.
 - Show one Retry message instead of two on submission failure (Phase 3 polish)
 - Free Supabase projects pause after inactivity — plan for keeping the demo awake or upgrading (Phase 4)
 - Supabase CLI v3.0.0 is available (pinned at 2.116.0) — evaluate upgrading between phases, not mid-step.
-- logo.png is an opaque pink square — replace with transparent version (Tracy) or MMAC's original file.
+- Ask MMAC for the original logo file (SVG or high-res transparent PNG).
