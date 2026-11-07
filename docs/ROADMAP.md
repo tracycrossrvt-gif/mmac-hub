@@ -2,7 +2,7 @@
 
 This is the single source of truth for where the project stands. Humans and coding agents read it at the start of every session and update it at the end of every step.
 
-**Current step:** 1b-db — Apply the four pending migrations to the dev Supabase project
+**Current step:** 1c — Verify on desktop and a mobile-width viewport
 **Active branch:** `round-5-secure-admin-review`
 **Last updated:** 2026-11-07
 
@@ -22,6 +22,7 @@ Rules for agents:
 - Work only on the **current step**. If you notice something else, add it to "Parking lot" below. Do not fix it.
 - Never log or commit applicant contact or medical data. Use obviously fictional test data only.
 - Never run migrations or SQL against the hosted Supabase project unless the current step explicitly says to.
+- Never apply schema changes through the Supabase SQL Editor. All schema changes go through migration files and the Supabase CLI, so migration history stays accurate.
 - When a step is complete, tick it here, move **Current step** forward, and update **Last updated**.
 
 ---
@@ -38,9 +39,10 @@ Rules for agents:
   - some fields fail validation with no visible error
   - object-level `.refine()` rules only run after field checks pass
   - Cause: dev database was four migrations behind the branch; also age errors were invisible and cross-field rules ran late.
-- [ ] **1b. Minimal fix** so a valid submission goes through and every invalid field shows its error. Remove all `TEMP-DIAGNOSTIC` code.
-  - Code fix done in 3d91178. Done-criteria (a valid submission goes through) blocked until 1b-db.
-- [ ] **1b-db. Apply the four pending migrations to the dev Supabase project** (20260916000000, 20260919000000, 20260920000000, 20261012000000) in filename order via `supabase db push`, after checking none were hand-applied and completing the read-only privilege review in docs/slice1-privilege-correction.md. Then re-test the admin history and status pages.
+- [x] **1b. Minimal fix** so a valid submission goes through and every invalid field shows its error. Remove all `TEMP-DIAGNOSTIC` code.
+  - Code fix done in 3d91178. Done-criteria (a valid submission goes through) unblocked by 1b-db.
+- [x] **1b-db. Apply the four pending migrations to the dev Supabase project** (20260916000000, 20260919000000, 20260920000000, 20261012000000) in filename order via `supabase db reset --linked`, after checking none were hand-applied and completing the read-only privilege review in docs/slice1-privilege-correction.md. Then re-test the admin history and status pages.
+  - Done 2026-11-07. Migrations 0916 and 0920 had been hand-applied (unrecorded). Backed up, rehearsed all 24 migrations + seed in PGlite (18/18 tests passed), then ran db reset --linked. Verified: 24 migrations recorded, all new objects present, one uuid submit function, seed counts correct, only service_role has SELECT on request tables. Admin login recreated; end-to-end fictional submission, admin view, and audited status change all work.
 - [ ] **1c. Verify** on desktop and a mobile-width viewport.
 
 ## Phase 2 — Slice 1 acceptance
@@ -125,3 +127,4 @@ Things noticed during a step but out of scope. Triage these between steps.
 
 - Show one Retry message instead of two on submission failure (Phase 3 polish)
 - Free Supabase projects pause after inactivity — plan for keeping the demo awake or upgrading (Phase 4)
+- Supabase CLI v3.0.0 is available (pinned at 2.116.0) — evaluate upgrading between phases, not mid-step.
