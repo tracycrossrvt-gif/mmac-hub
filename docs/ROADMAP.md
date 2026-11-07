@@ -2,7 +2,8 @@
 
 This is the single source of truth for where the project stands. Humans and coding agents read it at the start of every session and update it at the end of every step.
 
-**Current step:** Phase 2 — Slice 1 acceptance (first item: successful submission creates one complete record set)
+**Current step:** Phase 2 — core acceptance tests (launch scope)
+**Launch target:** live portfolio demo by Sunday 2026-11-08 evening. Shared with MMAC and employers; test data only.
 **Active branch:** `round-5-secure-admin-review`
 **Last updated:** 2026-11-07
 
@@ -23,6 +24,7 @@ Rules for agents:
 - Never log or commit applicant contact or medical data. Use obviously fictional test data only.
 - Never run migrations or SQL against the hosted Supabase project unless the current step explicitly says to.
 - Never apply schema changes through the Supabase SQL Editor. All schema changes go through migration files and the Supabase CLI, so migration history stays accurate.
+- Visual and content decisions follow docs/DESIGN.md. Don't invent copy, stats, or links — park gaps instead.
 - When a step is complete, tick it here, move **Current step** forward, and update **Last updated**.
 
 ---
@@ -52,32 +54,50 @@ Follow `docs/slice1-idempotency-acceptance.md`, using the development Supabase p
 
 - [ ] Successful submission creates one complete record set
 - [ ] Retrying with the same submission ID creates no duplicate
-- [ ] A conflicting payload is rejected (PT409) with no new rows
-- [ ] Recovery after an interrupted response and after a page reload
-- [ ] Duplicate-tab double send produces one case
-- [ ] Storage-failure scenarios fail closed
-- [ ] Console and server logs contain no contact or medical data, secrets, or raw DB errors
+- [ ] Recovery after a page reload
 - [ ] The submitted case appears correctly in the admin interface (detail, timeline, status)
 
 ## Phase 3 — Branded public frontend (live proof of concept)
 
 Direction: photographic hero, approachable service cards, warm sage and blue palette, MMAC branding.
 
-- [ ] Collect inputs from Tracy: logo, brand colors, photos with permission
-- [ ] Homepage
+- [ ] Build landing page (/) and intake page (/get-help) per docs/DESIGN.md
+- [ ] Demo banner, header, stats bar, footer per docs/DESIGN.md
+- [ ] Mobile + keyboard + contrast check at 375/768/1280
+
+## Phase 4 — Deployment readiness
+
+- [ ] Review the 14 `npm audit` findings and fix or document each
+- [x] Privilege correction applied to the hosted dev project via db reset --linked (2026-11-07, see 1b-db).
+- [ ] Before sharing the demo, confirm the dev database holds only fictional data (clear today's test submissions if needed).
+- [ ] Final security and cross-browser checks
+- [ ] Merge to `main` and deploy the demo to Vercel
+- [ ] Update the README status note once `main` is current
+- [ ] Record admin flow screenshots or a short video for the case study
+- [ ] Smoke-test the live site on a phone
+
+## After launch
+
+Not required for the Sunday demo. Pick these up once the demo is live.
+
+**Phase 2 acceptance (remaining):** follow `docs/slice1-idempotency-acceptance.md`.
+
+- [ ] A conflicting payload is rejected (PT409) with no new rows
+- [ ] Recovery after an interrupted response
+- [ ] Duplicate-tab double send produces one case
+- [ ] Storage-failure scenarios fail closed
+- [ ] Console and server logs contain no contact or medical data, secrets, or raw DB errors
+
+**Frontend:**
+
 - [ ] Service information pages
-- [ ] Navigation and layout
-- [ ] `/get-help` polish:
-  - styled error messages
-  - an error summary at the top that receives focus
-  - `aria-invalid` on invalid fields
-  - complete loading, success and failure states
-- [ ] Responsive polish
-- [ ] Accessibility pass (keyboard, screen reader, contrast)
+- [ ] Accessibility pass (full audit)
 
-## Phase 3.5 — Codebase walkthrough (Tracy)
+**Demo access:**
 
-Goal: Tracy can explain every part of the MVP in an interview. Walkthrough happens in the Claude planning chat, in small readable chunks. No code changes in this phase.
+- [ ] Read-only demo admin login
+
+**Codebase walkthrough (Tracy):** Tracy can explain every part of the MVP in an interview. The walkthrough happens in the Claude planning chat, in small readable chunks. No code changes.
 
 - [ ] Form + Zod schema, including `fieldsPassed` and the `when` gating on cross-field rules
 - [ ] Server action and the public submission contract
@@ -85,15 +105,6 @@ Goal: Tracy can explain every part of the MVP in an interview. Walkthrough happe
 - [ ] Database migrations and privileges
 - [ ] Admin auth (allowlist, protected routes) and the audited status workflow
 - [ ] Write a one-paragraph interview explanation for each area above
-
-## Phase 4 — Deployment readiness
-
-- [ ] Review the 14 `npm audit` findings and fix or document each
-- [ ] Decide how to apply the privilege-correction migration to the hosted Supabase project (it holds test data only)
-- [ ] Set up a demo database with seed data only and no real applicant data
-- [ ] Final security and cross-browser checks
-- [ ] Merge to `main` and deploy the demo to Vercel
-- [ ] Update the README status note once `main` is current
 
 ## Phase 5 — Post-MVP (not now)
 
@@ -111,9 +122,10 @@ These are product capabilities, not prerequisites for the demo:
 ## Open product decisions
 
 - **Server-rejected submissions lock the form permanently**, with no "start over" option. This protects the data, but it's a dead end for a stressed user. Decide before Phase 3.
-- **No verified public MMAC contact method is in the repo.** The recovery and conflict messages need one.
+  - Launch: locked card points to MMAC contact with demo note (per DESIGN.md); revisit before real use.
+- ~~**No verified public MMAC contact method is in the repo.**~~ **Resolved:** Contact method: MMAC's public phone/email (from maconmovesanimalcare.com) shown in footer and on the failure/locked card.
 - **sessionStorage holds unresolved contact and medical data** until the submission resolves. Confirm this is acceptable and say so on the form.
-- **Demo database:** a separate Supabase project, or the existing hosted test project?
+- ~~**Demo database:** a separate Supabase project, or the existing hosted test project?~~ **Resolved:** Demo database: existing dev Supabase project, test data only.
 
 ## End-of-project cleanup
 
@@ -129,3 +141,4 @@ Things noticed during a step but out of scope. Triage these between steps.
 - Show one Retry message instead of two on submission failure (Phase 3 polish)
 - Free Supabase projects pause after inactivity — plan for keeping the demo awake or upgrading (Phase 4)
 - Supabase CLI v3.0.0 is available (pinned at 2.116.0) — evaluate upgrading between phases, not mid-step.
+- logo.png is an opaque pink square — replace with transparent version (Tracy) or MMAC's original file.
