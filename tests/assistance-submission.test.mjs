@@ -190,3 +190,57 @@ test("repeat action calls forward the identical identifier and normalized payloa
   assert.deepEqual(plain(await h.submit(input())), plain(await h.submit(input())));
   assert.deepEqual(plain(h.calls.rpc[0]), plain(h.calls.rpc[1]));
 });
+
+const issuesOf = (result) => result.error.issues.map((issue) => `${issue.path.join(".")}: ${issue.message}`);
+
+test("cross-field rules report in the same pass as a blank dropdown", () => {
+  const h = harness();
+  const contact = h.schema.safeParse(input({ species: "", phone: "", email: "" }));
+  assert.equal(contact.success, false);
+  assert.deepEqual(issuesOf(contact).sort(), [
+    "phone: Please provide a phone number or email address.",
+    "species: Select a species.",
+  ]);
+
+  const heat = h.schema.safeParse(input({ species: "", sex: "female", alteredStatus: "unaltered", lastHeatCycleNotes: "" }));
+  assert.deepEqual(issuesOf(heat).sort(), [
+    'lastHeatCycleNotes: Please enter the last heat cycle or "Unknown."',
+    "species: Select a species.",
+  ]);
+});
+
+test("cross-field rules skip when a field they read failed its own check", () => {
+  const h = harness();
+  // Blank sex/altered status: the heat-cycle rule cannot apply yet.
+  const blankSelects = h.schema.safeParse(input({ sex: "", alteredStatus: "", lastHeatCycleNotes: "" }));
+  assert.deepEqual(issuesOf(blankSelects).sort(), ["alteredStatus: Select a spay/neuter status.", "sex: Select a sex."]);
+  // Malformed email: only the field's own error, not an extra contact error on phone.
+  const badEmail = h.schema.safeParse(input({ phone: "", email: "not-an-email" }));
+  assert.deepEqual(issuesOf(badEmail), ["email: Enter a valid email address."]);
+});
+
+const hostile = [123, true, null, [], {}, ["555-0100"], { trim() { throw new Error("rule ran on malformed data"); } }];
+for (const field of ["phone", "email", "sex", "alteredStatus", "lastHeatCycleNotes"]) {
+  for (const value of hostile) {
+    const shown = typeof value === "object" && value !== null && !Array.isArray(value) ? "object" : JSON.stringify(value);
+    test(`non-string ${field} ${shown} returns a normal validation error, not a crash`, async () => {
+      const h = harness();
+      const base = field === "lastHeatCycleNotes" ? { sex: "female", alteredStatus: "unaltered" } : {};
+      const data = input({ ...base, [field]: value });
+      assert.doesNotThrow(() => h.schema.safeParse(data));
+      const result = await h.submit(data);
+      assert.deepEqual(plain(result), { success: false, code: "validation", message: "Please review the information you submitted." });
+      assert.equal(h.calls.clients, 0);
+      assert.equal(h.calls.rpc.length, 0);
+    });
+  }
+}
+
+for (const data of [null, "text", 42, [], undefined]) {
+  test(`non-object data ${JSON.stringify(data) ?? "undefined"} returns a normal validation error`, async () => {
+    const h = harness();
+    assert.doesNotThrow(() => h.schema.safeParse(data));
+    assert.equal((await h.submit(data)).code, "validation");
+    assert.equal(h.calls.clients, 0);
+  });
+}

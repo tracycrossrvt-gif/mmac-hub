@@ -344,6 +344,11 @@ export function GetHelpForm() {
               className="mt-2 w-full rounded-md border px-3 py-2"
               {...register("age")}
             />
+            {errors.age && (
+              <p className="mt-1 text-sm" role="alert">
+                {errors.age.message}
+              </p>
+            )}
           </div>
 
           <div>

@@ -6,6 +6,17 @@ const optionalText = z.string().trim().transform((value) => value || undefined).
 const numericText = /^[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:e[+-]?\d+)?$/i;
 const weekdays = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"] as const;
 
+// Cross-field rules must report alongside field errors (so users see every
+// problem in one pass), but this schema also parses untrusted server input.
+// Run a rule only when the object itself parsed and every field it reads
+// passed its own checks; otherwise the rule could see malformed values.
+const fieldsPassed = (...fields: string[]) =>
+  (payload: { issues: readonly { path?: readonly PropertyKey[] }[] }) =>
+    payload.issues.every((issue) => {
+      const field = issue.path?.[0];
+      return field !== undefined && !fields.includes(String(field));
+    });
+
 export const getHelpSchema = z
   .object({
     firstName: z.string().trim().min(1, "First name is required."),
@@ -70,6 +81,7 @@ export const getHelpSchema = z
     {
       message: "Please provide a phone number or email address.",
       path: ["phone"],
+      when: fieldsPassed("phone", "email"),
     }
   )
 
@@ -83,6 +95,7 @@ export const getHelpSchema = z
       message:
         'Please enter the last heat cycle or "Unknown."',
       path: ["lastHeatCycleNotes"],
+      when: fieldsPassed("sex", "alteredStatus", "lastHeatCycleNotes"),
     }
   );
 
