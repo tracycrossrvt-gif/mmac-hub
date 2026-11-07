@@ -2,7 +2,7 @@
 
 This is the single source of truth for where the project stands. Humans and coding agents read it at the start of every session and update it at the end of every step.
 
-**Current step:** 1c — Verify on desktop and a mobile-width viewport
+**Current step:** Phase 2 — Slice 1 acceptance (first item: successful submission creates one complete record set)
 **Active branch:** `round-5-secure-admin-review`
 **Last updated:** 2026-11-07
 
@@ -32,7 +32,7 @@ Rules for agents:
 - [x] Push Slice 1 commits to GitHub (`549ce11`, `4320e73`, `cf57251`), done 2026-11-07
 - [x] Add this roadmap to the repo
 
-## Phase 1 — Fix the intake form (immediate blocker)
+## Phase 1 — Fix the intake form (immediate blocker) ✅ Complete 2026-11-07
 
 - [x] **1a. Diagnose** why `/get-help` won't submit. Use temporary dev-only `onInvalid` logging with field names and messages only, never values. Hypotheses:
   - a saved sessionStorage attempt is locking the form
@@ -43,7 +43,8 @@ Rules for agents:
   - Code fix done in 3d91178. Done-criteria (a valid submission goes through) unblocked by 1b-db.
 - [x] **1b-db. Apply the four pending migrations to the dev Supabase project** (20260916000000, 20260919000000, 20260920000000, 20261012000000) in filename order via `supabase db reset --linked`, after checking none were hand-applied and completing the read-only privilege review in docs/slice1-privilege-correction.md. Then re-test the admin history and status pages.
   - Done 2026-11-07. Migrations 0916 and 0920 had been hand-applied (unrecorded). Backed up, rehearsed all 24 migrations + seed in PGlite (18/18 tests passed), then ran db reset --linked. Verified: 24 migrations recorded, all new objects present, one uuid submit function, seed counts correct, only service_role has SELECT on request tables. Admin login recreated; end-to-end fictional submission, admin view, and audited status change all work.
-- [ ] **1c. Verify** on desktop and a mobile-width viewport.
+- [x] **1c. Verify** on desktop and a mobile-width viewport.
+  - Done 2026-11-07. Mobile: end-to-end submission. Desktop: visual check.
 
 ## Phase 2 — Slice 1 acceptance
 
