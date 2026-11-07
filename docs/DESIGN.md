@@ -216,7 +216,7 @@ Keep the existing fields, validation and submission logic exactly as they are. *
 
 | File | Description | Target |
 |---|---|---|
-| `public/images/logo.png` | Transparent background (pink removed from MMAC's 400×400 square; original file still preferred). | 400px wide or more |
+| `public/images/logo.png` | Transparent background (pink removed from MMAC's 400×400 square; original file still preferred). | 275×314 (artwork cropped, no detail lost); fine for header/footer — MMAC original preferred for favicon/og-image. |
 | `public/images/hero.jpg` | A kitten (no person). Subject placement and overlay per the image check. | About 2000px wide, under 500 KB |
 | `public/images/mountains.jpg` | Wide landscape of the local mountains | About 1600px wide, under 400 KB |
 

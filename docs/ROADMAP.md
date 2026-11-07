@@ -2,7 +2,7 @@
 
 This is the single source of truth for where the project stands. Humans and coding agents read it at the start of every session and update it at the end of every step.
 
-**Current step:** Phase 2 — core acceptance tests (launch scope)
+**Current step:** Phase 3 — Build landing page and intake page per docs/DESIGN.md
 **Launch target:** live portfolio demo by Sunday 2026-11-08 evening. Shared with MMAC and employers; test data only.
 **Active branch:** `round-5-secure-admin-review`
 **Last updated:** 2026-11-07
@@ -52,10 +52,12 @@ Rules for agents:
 
 Follow `docs/slice1-idempotency-acceptance.md`, using the development Supabase project and fictional data only.
 
-- [ ] Successful submission creates one complete record set
-- [ ] Retrying with the same submission ID creates no duplicate
-- [ ] Recovery after a page reload
-- [ ] The submitted case appears correctly in the admin interface (detail, timeline, status)
+- [x] Successful submission creates one complete record set
+- [x] Retrying with the same submission ID creates no duplicate
+- [x] Recovery after a page reload
+- [x] The submitted case appears correctly in the admin interface (detail, timeline, status)
+
+Verified 2026-11-07 in browser against dev DB. Retry test used DevTools Offline, so the first attempt never reached the server; the committed-but-response-lost case is covered by automated DB tests (supabase/tests/public_submission_idempotency.sql) and remains in After launch for browser verification.
 
 ## Phase 3 — Branded public frontend (live proof of concept)
 
