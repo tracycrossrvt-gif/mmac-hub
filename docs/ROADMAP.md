@@ -64,7 +64,7 @@ Verified 2026-11-07 in browser against dev DB. Retry test used DevTools Offline,
 Direction: photographic hero, approachable service cards, warm sage and blue palette, MMAC branding.
 
 - [ ] Build landing page (/) and intake page (/get-help) per docs/DESIGN.md
-- [ ] Demo banner, header, stats bar, footer per docs/DESIGN.md
+- [x] Demo banner, header, stats bar, footer per docs/DESIGN.md
 - [ ] Mobile + keyboard + contrast check at 375/768/1280
 
 ## Phase 4 — Deployment readiness
