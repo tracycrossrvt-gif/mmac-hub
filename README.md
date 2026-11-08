@@ -4,7 +4,9 @@
 
 [View source repository](https://github.com/tracycrossrvt-gif/mmac-hub) · [Explore the MMAC product case study](https://dev-portfolio-woad-seven.vercel.app/case-studies/mmac-hub)
 
-> **Project status:** In active development as a portfolio demo (test data only). `main` includes the branded public site, assistance intake, secure administrator review, the case interaction timeline, and the audited status workflow. See [docs/ROADMAP.md](docs/ROADMAP.md) for current progress. The case-study link is not a live demo of the admin application.
+**Live demo:** https://mmac-hub.vercel.app (portfolio demo, test data only; admin area not public)
+
+> **Project status:** In active development as a portfolio demo (test data only). `main` includes the branded public site, assistance intake, secure administrator review, the case interaction timeline, and the audited status workflow. See [docs/ROADMAP.md](docs/ROADMAP.md) for current progress.
 
 ## The problem
 

@@ -2,9 +2,10 @@
 
 This is the single source of truth for where the project stands. Humans and coding agents read it at the start of every session and update it at the end of every step.
 
-**Current step:** Phase 4 — Deployment readiness
+**Current step:** Phase 4 — remaining: admin screenshots for case study; Supabase pause plan
+**Live demo:** https://mmac-hub.vercel.app (portfolio demo, test data only). Deployed from `main` 2026-11-08.
 **Launch target:** live portfolio demo by Sunday 2026-11-08 evening. Shared with MMAC and employers; test data only.
-**Active branch:** `round-5-secure-admin-review`
+**Active branch:** `main` (work on short-lived branches, merged by pull request)
 **Last updated:** 2026-11-08
 
 ---
@@ -70,15 +71,21 @@ Direction: photographic hero, approachable service cards, warm sage and blue pal
 
 ## Phase 4 — Deployment readiness
 
-- [ ] Review the 14 `npm audit` findings and fix or document each
+- [x] Review the 14 `npm audit` findings and fix or document each
+  - Done 2026-11-08: next 16.4.5, zod 4.6, npm audit fix. Production: 0 vulnerabilities. 8 dev-only moderate (minimatch via typescript-eslint) accepted; no upstream fix.
 - [x] Privilege correction applied to the hosted dev project via db reset --linked (2026-11-07, see 1b-db).
-- [ ] Before sharing the demo, confirm the dev database holds only fictional data (clear today's test submissions if needed).
-- [ ] Final security and cross-browser checks
-- [ ] Merge to `main` and deploy the demo to Vercel
-- [ ] Update the README status note once `main` is current
+- [x] Before sharing the demo, confirm the dev database holds only fictional data (clear today's test submissions if needed).
+  - Confirmed 2026-11-08: fictional records only.
+- [x] Final security and cross-browser checks
+  - Done 2026-11-08: secret key server-only and absent from the client bundle and git history; .env files ignored; raw DB error logging removed. Browsers checked: phone and desktop smoke tests.
+- [x] Merge to `main` and deploy the demo to Vercel
+  - Done 2026-11-08: PR #1 merged; live at https://mmac-hub.vercel.app.
+- [x] Update the README status note once `main` is current
 - [ ] Record admin flow screenshots or a short video for the case study
-- [ ] Smoke-test the live site on a phone
-- [ ] Make the demo banner controlled by an environment setting (on for the demo, off for production).
+- [x] Smoke-test the live site on a phone
+  - Passed 2026-11-08: phone browse, Donate → Zeffy, live fictional submission, admin login, status change.
+- [x] Make the demo banner controlled by an environment setting (on for the demo, off for production).
+  - Done 2026-11-08: NEXT_PUBLIC_DEMO_MODE (on unless "false"); also sets noindex.
 
 ## Phase 4.5 — MMAC pilot (live use)
 
