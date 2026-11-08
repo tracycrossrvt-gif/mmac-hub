@@ -2,7 +2,7 @@
 
 This is the single source of truth for where the project stands. Humans and coding agents read it at the start of every session and update it at the end of every step.
 
-**Current step:** Phase 3 — Build landing page and intake page per docs/DESIGN.md
+**Current step:** Phase 4 — Deployment readiness
 **Launch target:** live portfolio demo by Sunday 2026-11-08 evening. Shared with MMAC and employers; test data only.
 **Active branch:** `round-5-secure-admin-review`
 **Last updated:** 2026-11-08
@@ -78,6 +78,22 @@ Direction: photographic hero, approachable service cards, warm sage and blue pal
 - [ ] Update the README status note once `main` is current
 - [ ] Record admin flow screenshots or a short video for the case study
 - [ ] Smoke-test the live site on a phone
+- [ ] Make the demo banner controlled by an environment setting (on for the demo, off for production).
+
+## Phase 4.5 — MMAC pilot (live use)
+
+Gate: Stephanie reviews the portfolio demo and signs off. Do not start until then.
+
+- [ ] Stephanie demo review and sign-off (record date and any requested changes)
+- [ ] Decide account ownership (MMAC-owned Supabase/Vercel vs Tracy's) and Supabase plan (paid tier to avoid pausing)
+- [ ] New production Supabase project: link, db push all migrations (no seed), verify with the 1b-db queries (D1–D5)
+- [ ] Production Vercel deployment with its own env vars; demo banner turned off via setting
+- [ ] Email notification to MMAC on each new request
+- [ ] Privacy notice on the form (what's collected, who sees it, retention)
+- [ ] Finish the "After launch" acceptance tests (conflict, lost response, duplicate tab, storage failure, log check)
+- [ ] "Submit another request" on the success card (move from Parking lot)
+- [ ] Admin account for Stephanie + 20-minute walkthrough
+- [ ] Go live; portfolio demo stays separate on the dev database
 
 ## After launch
 
@@ -109,7 +125,9 @@ Not required for the Sunday demo. Pick these up once the demo is live.
 - [ ] Admin auth (allowlist, protected routes) and the audited status workflow
 - [ ] Write a one-paragraph interview explanation for each area above
 
-## Phase 5 — Post-MVP (not now)
+## Phase 5 — Phased rollout of the full ERD
+
+After the pilot is live and in use, break the target ERD into modules and ship one at a time, each with its own brief, migrations, tests, and Stephanie review. Order to be decided with MMAC.
 
 These are product capabilities, not prerequisites for the demo:
 
@@ -147,4 +165,3 @@ Things noticed during a step but out of scope. Triage these between steps.
 - Ask MMAC for the original logo file (SVG or high-res transparent PNG).
 - Get Involved page is one section for launch — add volunteer sign-up and other ways to help later.
 - Service tiles have names only — add one-line descriptions from MMAC.
-- Add 'Submit another request' on the success card — start a fresh attempt only after a confirmed success; needs tests for the guard/storage logic.
