@@ -49,7 +49,8 @@ export default async function RequestsPage() {
 .returns<AssistanceRequestQueueItem[]>();
 
   if (error) {
-    console.error("Failed to load assistance requests:", error);
+    // Fixed message plus code only: raw database errors can include query details.
+    console.error("Failed to load assistance requests.", { code: error.code });
 
     return (
       <main className="mx-auto w-full max-w-4xl px-4 py-10 sm:px-6">
