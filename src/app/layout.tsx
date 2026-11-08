@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Fraunces, Inter } from "next/font/google";
+import { demoMode } from "@/lib/demoMode";
 import "./globals.css";
 
 const inter = Inter({
@@ -19,6 +20,8 @@ export const metadata: Metadata = {
   },
   description:
     "Affordable veterinary care, resources, and support for families in Macon, Jackson, and Rabun Counties.",
+  // Keep the portfolio demo out of search results next to MMAC's real site.
+  ...(demoMode ? { robots: { index: false, follow: false } } : {}),
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

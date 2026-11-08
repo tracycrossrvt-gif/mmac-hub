@@ -21,6 +21,7 @@ import {
 import { siteInfo } from "@/components/layout/siteInfo";
 import { buttonStyles } from "@/components/ui/button";
 import { AlertCircleIcon, CheckCircleIcon } from "@/components/ui/icons";
+import { demoMode } from "@/lib/demoMode";
 
 const storageMessage = "We cannot safely save or restore this submission in this browser. No new attempt will be sent. If you already submitted, do not start another request for the same attempt.";
 const retryMessage = "We could not confirm receipt. Keep this tab open and use Retry this submission to send the same saved details. Do not start another request for this attempt.";
@@ -732,7 +733,7 @@ export function GetHelpForm() {
               ))}
             </div>
           </div>
-          <DemoContactNote />
+          {demoMode && <DemoContactNote />}
         </div>
       )}
 

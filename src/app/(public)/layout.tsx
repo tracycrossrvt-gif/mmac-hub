@@ -2,6 +2,7 @@ import { DemoBanner } from "@/components/layout/DemoBanner";
 import { SiteFooter } from "@/components/layout/SiteFooter";
 import { SiteHeader } from "@/components/layout/SiteHeader";
 import { StatsBar } from "@/components/layout/StatsBar";
+import { demoMode } from "@/lib/demoMode";
 
 // Public site chrome (docs/DESIGN.md "Global elements"). Admin routes live
 // outside this group and don't get any of it.
@@ -14,7 +15,7 @@ export default function PublicLayout({ children }: LayoutProps<"/">) {
       >
         Skip to content
       </a>
-      <DemoBanner />
+      {demoMode && <DemoBanner />}
       <SiteHeader />
       <main id="main" tabIndex={-1} className="flex-1 focus:outline-none">
         {children}
