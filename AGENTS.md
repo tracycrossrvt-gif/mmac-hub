@@ -1,3 +1,5 @@
+Before starting any task, read docs/ROADMAP.md. Work only on the current step listed there, and update the roadmap when a step is complete.
+
 # MMAC Hub — Agent Instructions
 
 MMAC Hub is a production-oriented full-stack operations platform and public website for Macon Moves Animal Care (MMAC), a 501(c)(3) animal-welfare nonprofit.

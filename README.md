@@ -4,15 +4,16 @@
 
 [View source repository](https://github.com/tracycrossrvt-gif/mmac-hub) · [Explore the MMAC product case study](https://dev-portfolio-woad-seven.vercel.app/case-studies/mmac-hub)
 
-> **Project status:** In active development. The primary implementation and review work is on [`round-5-secure-admin-review`](https://github.com/tracycrossrvt-gif/mmac-hub/tree/round-5-secure-admin-review); `main` currently reflects an earlier foundation. The case-study link is not a live demo of the admin application.
+> **Project status:** In active development as a portfolio demo (test data only). `main` includes the branded public site, assistance intake, secure administrator review, the case interaction timeline, and the audited status workflow. See [docs/ROADMAP.md](docs/ROADMAP.md) for current progress. The case-study link is not a live demo of the admin application.
 
 ## The problem
 
 Community animal-welfare assistance involves more than collecting a form. Requests must connect people, animals, services, prescreening information, authorized reviewers, and a trustworthy record of decisions. MMAC Hub is designed to reduce manual coordination while keeping sensitive administrative actions under server-side control.
 
-## Implemented in the active development branch
+## Implemented
 
-- **Public assistance intake:** Structured request submission, input validation, and submission feedback states.
+- **Branded public website:** Home, Our Programs, Get Involved, and Get Help pages with a shared header, footer, and accessible mobile navigation.
+- **Public assistance intake:** Structured request submission, input validation with an error summary, and retry-safe submission feedback states.
 - **Relational data foundation:** PostgreSQL/Supabase tables for people, households, animals, assistance requests, services, prescreening, and related records.
 - **Restricted administration:** Supabase Auth sessions and server-side authorization using an allowlist of verified user IDs.
 - **Request review:** Authorized administrators can inspect incoming requests and associated details.
@@ -31,6 +32,7 @@ Community animal-welfare assistance involves more than collecting a form. Reques
 ## Technology
 
 - Next.js App Router, React, TypeScript, Tailwind CSS
+- React Hook Form and Zod validation
 - Supabase Auth and PostgreSQL
 - Server-side actions and relational database migrations
 - Node.js tooling, ESLint, and focused automated tests
@@ -58,3 +60,7 @@ I am developing MMAC Hub from operational problem discovery through data modelin
 
 **Tracy Cross** — Software Developer  
 [Portfolio](https://dev-portfolio-woad-seven.vercel.app/) · [GitHub](https://github.com/tracycrossrvt-gif) · [LinkedIn](https://www.linkedin.com/in/tracy-cross-dev/)
+
+## Developer documentation
+
+Detailed development notes for each delivered unit: [docs/development-notes.md](docs/development-notes.md).

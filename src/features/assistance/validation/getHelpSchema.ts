@@ -1,61 +1,79 @@
 import { z } from "zod";
 
+const optionalText = z.string().trim().transform((value) => value || undefined).optional();
+// Accept decimal/exponent notation from number inputs, not Number()'s hex or
+// boolean/null coercions. Keep age as text so client output can be revalidated.
+const numericText = /^[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:e[+-]?\d+)?$/i;
+const weekdays = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"] as const;
+
+// Cross-field rules must report alongside field errors (so users see every
+// problem in one pass), but this schema also parses untrusted server input.
+// Run a rule only when the object itself parsed and every field it reads
+// passed its own checks; otherwise the rule could see malformed values.
+const fieldsPassed = (...fields: string[]) =>
+  (payload: { issues: readonly { path?: readonly PropertyKey[] }[] }) =>
+    payload.issues.every((issue) => {
+      const field = issue.path?.[0];
+      return field !== undefined && !fields.includes(String(field));
+    });
+
 export const getHelpSchema = z
   .object({
     firstName: z.string().trim().min(1, "First name is required."),
     lastName: z.string().trim().min(1, "Last name is required."),
 
-    phone: z.string().trim().optional(),
+    phone: optionalText,
 
-    email: z
-      .string()
-      .trim()
-      .refine(
-        (value) => value === "" || z.string().email().safeParse(value).success,
-        "Enter a valid email address."
-      )
-      .optional(),
+    // Reuse the email bound already enforced by the authentication boundary.
+    email: optionalText.pipe(z.email("Enter a valid email address.").max(254).optional()),
 
-    animalName: z.string().trim().optional(),
+    animalName: optionalText,
 
-    species: z.string().min(1, "Select a species."),
-    sex: z.string().min(1, "Select a sex."),
-    alteredStatus: z.string().min(1, "Select a spay/neuter status."),
+    // String input preserves the form's empty select defaults; parsed values
+    // are restricted to the existing UI options and database CHECK constraints.
+    species: z.string().pipe(z.enum(["dog", "cat", "other"], { error: "Select a species." })),
+    sex: z.string().pipe(z.enum(["male", "female", "unknown"], { error: "Select a sex." })),
+    alteredStatus: z.string().pipe(z.enum(["altered", "unaltered", "unknown"], { error: "Select a spay/neuter status." })),
 
-    age: z.string().trim().optional(),
-    breed: z.string().trim().optional(),
-    colorDescription: z.string().trim().optional(),
+    // UI min=0; the upper bound is numeric(4,1) storage, not an age/eligibility policy.
+    age: optionalText.refine((value) => value === undefined || (
+      numericText.test(value) && Number.isFinite(Number(value))
+      && Number(value) >= 0 && Number(value) <= 999.9
+    ), "Enter a valid nonnegative age within the supported range (0–999.9 years)."),
+    breed: optionalText,
+    colorDescription: optionalText,
 
-    lastHeatCycleNotes: z.string().trim().optional(),
+    lastHeatCycleNotes: optionalText,
 
     helpSummary: z
       .string()
       .trim()
-      .min(5, "Please tell us briefly what help you need."),
+      .min(5, "Please tell us a little more (at least 5 characters)."),
 
-    rabiesStatus: z.string().min(1, "Select a rabies status."),
+    rabiesStatus: z.string().pipe(z.enum(["current", "not_current", "unknown"], { error: "Select a rabies status." })),
 
-    preventionUseStatus: z
-      .string()
-      .min(1, "Select a prevention status."),
+    preventionUseStatus: z.string().pipe(z.enum(["using", "not_using", "unknown"], { error: "Select a prevention status." })),
 
-    preventionProduct: z.string().trim().optional(),
-    medicalConcerns: z.string().trim().optional(),
+    preventionProduct: optionalText,
+    medicalConcerns: optionalText,
 
-    availableDays: z.array(z.string()).optional(),
+    availableDays: z.array(z.string().pipe(z.enum(weekdays))).max(7)
+      .refine((days) => new Set(days).size === days.length, "Select each day only once.").optional(),
 
-    transportationNotes: z.string().trim().optional(),
+    transportationNotes: optionalText,
 
     statedContributionAmount: z
       .preprocess(
-        (value) => (value === "" ? undefined : value),
-        z.coerce
-          .number()
+        (value) => (typeof value === "string" && value.trim() === "" ? undefined : value),
+        z.union([z.number(), z.string().trim().regex(numericText, "Enter a valid contribution amount.").transform(Number)])
+          .pipe(z.number()
           .min(0, "Contribution amount cannot be negative.")
+          // Existing numeric(10,2) storage; this is not a funding decision.
+          .max(99999999.99, "Contribution amount exceeds the supported range."))
           .optional()
       ),
 
-    additionalInformation: z.string().trim().optional(),
+    additionalInformation: optionalText,
   })
 
   .refine(
@@ -63,6 +81,7 @@ export const getHelpSchema = z
     {
       message: "Please provide a phone number or email address.",
       path: ["phone"],
+      when: fieldsPassed("phone", "email"),
     }
   )
 
@@ -76,6 +95,7 @@ export const getHelpSchema = z
       message:
         'Please enter the last heat cycle or "Unknown."',
       path: ["lastHeatCycleNotes"],
+      when: fieldsPassed("sex", "alteredStatus", "lastHeatCycleNotes"),
     }
   );
 
