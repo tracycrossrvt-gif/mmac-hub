@@ -19,7 +19,7 @@ export type NavItem =
 export const navItems: readonly NavItem[] = [
   { label: "Home", href: "/" },
   { label: "Get Help", href: "/get-help" },
-  { label: "Our Programs", href: "/#services" },
-  { label: "Get Involved", comingSoon: true },
+  { label: "Our Programs", href: "/programs" },
+  { label: "Get Involved", href: "/get-involved" },
   { label: "Resources", comingSoon: true },
 ];

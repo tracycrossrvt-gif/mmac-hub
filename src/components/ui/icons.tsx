@@ -98,3 +98,78 @@ export function FacebookIcon(props: IconProps) {
     </Svg>
   );
 }
+
+export function PawIcon(props: IconProps) {
+  return (
+    <Svg {...props}>
+      <circle cx="6" cy="10" r="2" />
+      <circle cx="10" cy="5.5" r="2" />
+      <circle cx="14" cy="5.5" r="2" />
+      <circle cx="18" cy="10" r="2" />
+      <path d="M12 12c-2.5 0-5 3.5-5 6a2.5 2.5 0 0 0 3.5 2.3 3.6 3.6 0 0 1 3 0A2.5 2.5 0 0 0 17 18c0-2.5-2.5-6-5-6z" />
+    </Svg>
+  );
+}
+
+export function CalendarIcon(props: IconProps) {
+  return (
+    <Svg {...props}>
+      <rect x="3" y="5" width="18" height="16" rx="2" />
+      <path d="M3 10h18M8 3v4M16 3v4" />
+    </Svg>
+  );
+}
+
+export function BookIcon(props: IconProps) {
+  return (
+    <Svg {...props}>
+      <path d="M4 5a2 2 0 0 1 2-2h14v15H6a2 2 0 0 0-2 2z" />
+      <path d="M4 20a2 2 0 0 0 2 2h14v-4" />
+    </Svg>
+  );
+}
+
+export function MedicalCrossIcon(props: IconProps) {
+  return (
+    <Svg {...props}>
+      <path d="M9 3h6v6h6v6h-6v6H9v-6H3V9h6z" />
+    </Svg>
+  );
+}
+
+export function SyringeIcon(props: IconProps) {
+  return (
+    <Svg {...props}>
+      <path d="M18 2l4 4M20 4l-4 4M15 5l4 4M17 7L8 16H5v-3l9-9M8 10l2 2M11 7l2 2M5 16l-3 3" />
+    </Svg>
+  );
+}
+
+export function StethoscopeIcon(props: IconProps) {
+  return (
+    <Svg {...props}>
+      <path d="M5 3v5a5 5 0 0 0 10 0V3" />
+      <path d="M10 13v2a5 5 0 0 0 10 0v-2" />
+      <circle cx="20" cy="11" r="2" />
+    </Svg>
+  );
+}
+
+export function CatIcon(props: IconProps) {
+  return (
+    <Svg {...props}>
+      <path d="M4 4l3 4h10l3-4v9a8 8 0 0 1-16 0z" />
+      <path d="M9 13h.01M15 13h.01M11 16.5h2" />
+    </Svg>
+  );
+}
+
+export function HomeIcon(props: IconProps) {
+  return (
+    <Svg {...props}>
+      <path d="M3 11l9-8 9 8" />
+      <path d="M5 10v10h14V10" />
+      <path d="M12 18s-3-1.8-3-3.6a1.6 1.6 0 0 1 3-.8 1.6 1.6 0 0 1 3 .8C15 16.2 12 18 12 18z" />
+    </Svg>
+  );
+}

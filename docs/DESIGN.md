@@ -1,6 +1,6 @@
 # MMAC Hub Design Spec (Launch)
 
-This is the design source of truth for the launch build. It covers two pages: the **landing page** (`/`) and the **intake page** (`/get-help`). Agents build to this spec and do not invent content. Anything not covered here goes to the roadmap's Parking lot.
+This is the design source of truth for the launch build. It covers four pages: **Home** (`/`), **Our Programs** (`/programs`), **Get Involved** (`/get-involved`) and **Get Help**, the intake page (`/get-help`). Agents build to this spec and do not invent content. Anything not covered here goes to the roadmap's Parking lot.
 
 **Site type:** a portfolio demo shared with MMAC and employers. The database holds test data only.
 
@@ -70,7 +70,7 @@ Load both fonts with `next/font/google`, not a CSS link.
 
 ---
 
-## Global elements (both pages)
+## Global elements (all pages)
 
 ### Demo banner (top of every page)
 
@@ -84,8 +84,8 @@ A slim navy bar with white text:
 - **Nav:**
   - **Home** → `/`
   - **Get Help** → `/get-help`
-  - **Our Programs** → `/#services`
-  - **Get Involved** → coming soon
+  - **Our Programs** → `/programs`
+  - **Get Involved** → `/get-involved`
   - **Resources** → coming soon
 - **Right:** a gold **Donate** button linking to Zeffy, opening in a new tab with `rel="noopener noreferrer"`.
 - **Mobile:** a hamburger menu that is keyboard accessible and closes on Escape.
@@ -119,27 +119,27 @@ Navy background, white text.
 
 ## Landing page (`/`), in order
 
-### 1. Hero (from Mockup C)
+### 1. Hero (split layout, adapted from Mockup C)
 
-A full-width photo (`/images/hero.jpg`) with a dark gradient overlay on the left, so the white text stays readable.
+`hero.jpg` is **portrait** (2000×2667), so a full-width photo would crop the kitten to half a face. The hero is a split instead:
 
-**Image placement (from the image check, 2026-11-07):**
-
-- `hero.jpg` is **portrait** (2000×2667). The kitten's face sits center-right, about 60% across and 5–37% down. The left side is bright, busy green and blurred background, not dark space.
-- Use `object-fit: cover` with `object-position: 60% 5%` so the ears and face stay in frame when the image is cropped to a wide band. Keep the desktop hero at least about 640px tall so the chin isn't cut off.
-- The left overlay must be strong: a gradient from `primary` at about 85% opacity on the left edge, fading to transparent by about 60% of the width.
-- **Mobile:** don't put text over the kitten's face. Either stack the text below the photo, or place it at the bottom over a bottom-up `primary` gradient.
+- **Tablet and desktop (768px and up):** two columns, about 600px tall on desktop and 520px on tablet.
+  - **Left (~55%):** a solid `primary` panel with the eyebrow, headline, body and buttons, vertically centered. No gradient over text.
+  - **Right (~45%):** `hero.jpg` with `object-fit: cover` and `object-position` near the top (about `center 15%`), so the kitten shows from ears to paws.
+  - A soft ~80px `primary`-to-transparent fade where the panel meets the photo.
+- **Mobile:** the photo on top at about 4:3 (`object-position` about `center 10%`, so the face and ears are in frame), then the navy text block below.
+- The headline breaks as "Real Care for / Real Life."
 
 - **Eyebrow:** PETS ARE FAMILY. WE'RE HERE TO HELP.
 - **Headline:** Real Care for Real Life.
 - **Body:** Affordable veterinary care, resources, and support for families in Macon, Jackson, and Rabun Counties.
 - **Buttons:**
   - **Get Help for Your Pet →** (gold) → `/get-help`
-  - **How We Help** (white outline) → `/#services`
+  - **How We Help** (white outline) → `/programs`
 
 ### 2. Action cards (from Mockup C)
 
-Three cards in a row on sand or white:
+Three compact cards fully below the hero (no overlap), 3 across on desktop and stacked on mobile. Each card: icon inline to the left of the title, the description below, then an arrow (link) or the "Coming soon" pill.
 
 | Card | Icon | Text | Link |
 |---|---|---|---|
@@ -147,31 +147,51 @@ Three cards in a row on sand or white:
 | **Find a Clinic Event** | calendar | Vaccines, clinics, and community services. | Coming soon |
 | **Explore Resources** | book | Helpful information for pet health and care. | Coming soon |
 
-### 3. Services row (`id="services"`)
+Leave comfortable space below the cards so the stats bar doesn't sit tight against them.
 
-This section is an addition to the mockups. It holds the "How We Help" anchor target.
-
-- **Section heading:** How We Help
-- **Five icon tiles:**
-  1. Spay/Neuter
-  2. Vaccines & Preventatives
-  3. Basic Care
-  4. TNR / Community Cats
-  5. Homeless Animal Support
-
-The tiles are informational only, with no links.
-
-### 4. Community section (from Mockup B's lower half)
-
-A split layout: a navy panel on the left and the mountains photo (`/images/mountains.jpg`) on the right. On mobile they stack.
-
-- **Headline:** Local Pets. Lasting Change.
-- **Body:** Healthier pets mean stronger families and a brighter community for generations to come.
-- **Button:** **Support Our Work →** (gold) → Zeffy, in a new tab.
-
-### 5. Stats bar, then the footer
+### 3. Stats bar, then the footer
 
 These are the global elements described above.
+
+---
+
+## Our Programs page (`/programs`)
+
+It uses the same banner, header, stats bar and footer as the landing page.
+
+### Header band
+
+The same layout as the Get Involved page: a navy panel on the left and a photo on the right, stacked on mobile with text first.
+
+- **Headline (the page's `h1`):** How We Help
+- **Body:** Affordable veterinary care and support for families in Macon, Jackson, and Rabun Counties.
+- **Photo:** `/images/programs.jpg` (not supplied yet). Until it exists, the navy panel spans the full width.
+
+### Services
+
+This section is an addition to the mockups. Five informational icon tiles, with no links:
+
+1. Spay/Neuter
+2. Vaccines & Preventatives
+3. Basic Care
+4. TNR / Community Cats
+5. Homeless Animal Support
+
+Below the tiles: **Get Help for Your Pet →** (gold) → `/get-help`.
+
+---
+
+## Get Involved page (`/get-involved`)
+
+It uses the same banner, header, stats bar and footer as the landing page.
+
+### Community section (from Mockup B's lower half)
+
+A split layout: a navy panel on the left and the mountains photo (`/images/mountains.jpg`) on the right. On mobile they stack, text first. On desktop the section is about 480–560px tall so it reads as a page, not a strip.
+
+- **Headline (the page's `h1`):** Local Pets. Lasting Change.
+- **Body:** Healthier pets mean stronger families and a brighter community for generations to come.
+- **Button:** **Support Our Work →** (gold) → Zeffy, in a new tab.
 
 ---
 
