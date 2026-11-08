@@ -1,25 +1,39 @@
+import type { Metadata } from "next";
+
 import { GetHelpForm } from "@/features/assistance/components/GetHelpForm";
+
+// Intake page per docs/DESIGN.md "Intake page (/get-help)". Copy comes from
+// the spec verbatim; don't add copy that isn't there.
+
+const intro =
+  "Tell us about yourself and your pet. It's okay if you aren't sure about some answers — Macon Moves will review your request and be in touch.";
+
+export const metadata: Metadata = {
+  title: "Get Help",
+  description: intro,
+};
 
 export default function GetHelpPage() {
   return (
-    <main className="mx-auto w-full max-w-3xl px-4 py-10 sm:px-6">
-      <div className="mb-8">
-        <p className="mb-2 text-sm font-medium uppercase tracking-wide">
-          Macon Moves Animal Care
-        </p>
+    <div className="bg-sand">
+      <section data-surface="dark" className="bg-primary text-white">
+        <div className="mx-auto w-full max-w-3xl px-4 py-12 sm:px-6 sm:py-14">
+          <h1 className="font-display text-4xl font-semibold leading-tight sm:text-5xl">Ask for Help</h1>
+          <p className="mt-4 text-lg leading-relaxed text-white/90">{intro}</p>
+          <p className="mt-3 leading-relaxed text-white/90">
+            If your connection drops, your answers are saved in this browser tab until your request goes through.
+          </p>
+          <p className="mt-6 rounded-xl bg-white/10 p-4 text-sm leading-relaxed">
+            Requesting help doesn&apos;t guarantee services. Rabies vaccination is required for most veterinary
+            care coordinated through MMAC. If your pet isn&apos;t current or you&apos;re unsure, it may be included
+            as part of their care.
+          </p>
+        </div>
+      </section>
 
-        <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">
-          Get Help
-        </h1>
-
-        <p className="mt-4 text-base leading-7">
-          Tell us about you, your animal, and the help you need. Submitting this
-          form does not schedule an appointment. Macon Moves will review your
-          request and contact you about available options.
-        </p>
+      <div className="mx-auto w-full max-w-3xl px-4 py-10 sm:px-6 sm:py-12">
+        <GetHelpForm />
       </div>
-
-      <GetHelpForm />
-    </main>
+    </div>
   );
 }

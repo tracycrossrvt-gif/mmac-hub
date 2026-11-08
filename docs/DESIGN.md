@@ -204,7 +204,8 @@ It uses the same banner, header, stats bar and footer as the landing page.
 A short navy band with white text.
 
 - **Headline:** Ask for Help
-- **Body:** Tell us about yourself and your pet. It's okay if you aren't sure about some answers — Stephanie will review your request and be in touch.
+- **Body:** Tell us about yourself and your pet. It's okay if you aren't sure about some answers — Macon Moves will review your request and be in touch.
+- **Saved-answers line:** If your connection drops, your answers are saved in this browser tab until your request goes through.
 - **Note:** Requesting help doesn't guarantee services. Rabies vaccination is required for most veterinary care coordinated through MMAC. If your pet isn't current or you're unsure, it may be included as part of their care.
 
 ### Form

@@ -48,7 +48,7 @@ export const getHelpSchema = z
     helpSummary: z
       .string()
       .trim()
-      .min(5, "Please tell us briefly what help you need."),
+      .min(5, "Please tell us a little more (at least 5 characters)."),
 
     rabiesStatus: z.string().pipe(z.enum(["current", "not_current", "unknown"], { error: "Select a rabies status." })),
 
