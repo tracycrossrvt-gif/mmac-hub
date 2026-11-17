@@ -2,11 +2,12 @@
 
 This is the single source of truth for where the project stands. Humans and coding agents read it at the start of every session and update it at the end of every step.
 
-**Current step:** Phase 4 — remaining: admin screenshots for case study; Supabase pause plan
+**Current step:** Phase 5 — Slice 2a — Requested services (design approved 2026-11-17; implementation next)
+**Next step:** Slice 2b — Multiple animals per request
 **Live demo:** https://mmac-hub.vercel.app (portfolio demo, test data only). Deployed from `main` 2026-11-08.
 **Launch target:** live portfolio demo by Sunday 2026-11-08 evening. Shared with MMAC and employers; test data only.
-**Active branch:** `main` (work on short-lived branches, merged by pull request)
-**Last updated:** 2026-11-08
+**Active branch:** `slice-2a-requested-services` (work on short-lived branches, merged by pull request)
+**Last updated:** 2026-11-17
 
 ---
 
@@ -144,6 +145,16 @@ These are product capabilities, not prerequisites for the demo:
 - Bookings
 - Service-delivery reporting
 - Community cat / TNR projects, vaccine clinics, volunteer and donate flows
+
+## Phase 5 — Slice 2a
+
+Step 3 of the Get Help workflow ("Request Services") for a single animal, using the existing `services` and `request_animal_services` tables. Phase 4 leftovers (admin screenshots, Supabase pause plan) remain open above.
+
+- [ ] **Slice 2a — Requested services (single animal)** ← current
+  - [x] Design doc: docs/slice2a-requested-services.md (approved by Tracy 2026-11-17; broad public categories, Tracy defaults pending Stephanie review)
+  - [ ] Implementation: migration, schema/action/form, admin advice flag, tests (SQL, Node, PGlite on PG17 + PG18)
+  - [ ] Rollout to the dev project: backup, dry run, db push, verify; then deploy code (migration first)
+- [ ] **Slice 2b — Multiple animals per request** ← next
 
 ---
 
