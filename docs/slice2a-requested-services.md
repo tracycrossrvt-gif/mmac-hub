@@ -20,7 +20,7 @@ instead of reading them out of free text.
 
 | # | Decision | Default |
 |---|---|---|
-| D1 | What the public form offers | Three **broad categories**: "Surgery", "Medical care", "Vaccine Clinic", plus "Not sure — I'd like advice". Not the 8 detailed services. |
+| D1 | What the public form offers | Three **broad categories**: "Surgery", "Medical care", "Vaccine clinic", plus "Not sure — I'd like advice". Not the 8 detailed services. |
 | D2 | Required or optional | **Required.** At least one category or "Not sure" must be ticked. "Not sure" counts as an answer. |
 | D3 | Species "Other" | Sees **only "Not sure — I'd like advice"**. |
 | D4 | Wording | As proposed in §2 ("Which services are you asking about?", "Not sure — I'd like advice"). |
@@ -117,7 +117,7 @@ Select all that apply. Asking doesn't guarantee a service.
 
 [ ] Surgery
 [ ] Medical care
-[ ] Vaccine Clinic
+[ ] Vaccine clinic
 ───────────────────────────
 [ ] Not sure — I'd like advice
 ```
@@ -272,7 +272,7 @@ One new migration, e.g.
   |---|---|---|---|---|---|
   | `50000000-0000-0000-0000-000000000101` | Surgery | `surgery` | all | 110 | true |
   | `50000000-0000-0000-0000-000000000102` | Medical care | `medical-care` | all | 120 | true |
-  | `50000000-0000-0000-0000-000000000103` | Vaccine Clinic | `vaccine-clinic` | all | 130 | true |
+  | `50000000-0000-0000-0000-000000000103` | Vaccine clinic | `vaccine-clinic` | all | 130 | true |
 
   Use `insert … on conflict do nothing`, then
   `update … set is_public_request_option = true where slug in ('surgery','medical-care','vaccine-clinic')`.
@@ -390,8 +390,9 @@ select v_request_animal_id, s from unnest(p_service_ids) s order by s;
     `uuid` type normalizes case and format, and ordering by `uuid` is deterministic, so
     **reordered IDs produce the same hash**.
   - `'service_advice_requested', p_service_advice_requested`
-- That is 25 key/value pairs (50 arguments), under the 100-argument limit for
-  `jsonb_build_object`. Add a comment noting the limit for future fields.
+- The v2 keys are appended with `jsonb ||` onto the frozen v1 object, so v1 bytes are
+  untouched and the 100-argument limit of `jsonb_build_object` isn't approached.
+  (*Implementation note: changed from one 25-pair call.*)
 - Replay comparison becomes
   `v_receipt.contract_version <> p_contract_version or v_receipt.payload_hash <> v_hash
   → PT409`. Receipts store `p_contract_version`.
@@ -412,9 +413,17 @@ The same pattern as 1012, re-asserted inside the migration:
 - `security definer set search_path = ''`, with every object schema-qualified.
 - DO block: trusted owner (not an app role); the overload guard (§4.2); EXECUTE only for
   `service_role`; no app role can assume the owner of the function, receipts table,
-  `assistance_requests`, `services`, or `request_animal_services`; no app role has
-  INSERT/UPDATE/DELETE on `request_animal_services` or `services`; receipts table still has
-  no app-role access.
+  `assistance_requests`, `services`, `request_animals`, or `request_animal_services`;
+  receipts table still has no app-role access; `service_role` can read
+  `is_public_request_option` and `service_advice_requested`.
+- *Implementation note:* the migration does **not** assert that app roles lack
+  INSERT/UPDATE/DELETE grants on `services` and `request_animal_services`. Supabase's
+  default privileges grant those to anon/authenticated/service_role on every new table, so
+  that assertion would make `db push` fail on the hosted project. Those tables are
+  protected by RLS with no policies (anon/authenticated) instead. The SQL tests check the
+  *effective* result: a write by anon or authenticated is refused or affects zero rows,
+  under both restrictive and Supabase-style default grants. Normalizing those table grants
+  is parked as a separate step.
 - `notify pgrst, 'reload schema';` before commit.
 
 ### 4.8 Rollback plan
@@ -448,7 +457,7 @@ The same pattern as 1012, re-asserted inside the migration:
 2. **Public options seeded by migration:** exactly three active services with
    `is_public_request_option`, slugs `surgery`, `medical-care`, `vaccine-clinic`; all 8
    detailed services are `false`.
-3. Valid v2: dog + Surgery + Vaccine Clinic → one `request_animal_services` row per option,
+3. Valid v2: dog + Surgery + Vaccine clinic → one `request_animal_services` row per option,
    `service_advice_requested = false`, receipt `contract_version = 2`.
 4. Advice only (empty IDs, advice true) → zero service rows, flag true. Also for species
    `other`.
@@ -469,11 +478,14 @@ The same pattern as 1012, re-asserted inside the migration:
 14. v1 compatibility: call with no new arguments → behaves exactly like today (receipt v1,
     no service rows). Replay of that v1 submission → same receipt. v1 call with service IDs
     → `PT422`.
-15. Privileges: `anon` and `authenticated` cannot EXECUTE; `service_role` can; no app-role
-    write on `request_animal_services` or `services`.
+15. Privileges: `anon` and `authenticated` cannot EXECUTE; `service_role` can; anon and
+    authenticated writes to `request_animal_services` and `services` are refused or affect
+    zero rows (see §4.7 implementation note).
 
-Update `public_submission_idempotency.sql` and `public_submission_privileges.sql` where they
-reference the old 22-argument signature.
+*Implementation note:* `public_submission_idempotency.sql` needed no change. It calls the
+function with 22 positional arguments, which now resolve to the new function with v1
+defaults, so the unchanged file is itself a v1 compatibility test.
+`public_submission_privileges.sql` is a read-only report and doesn't name the signature.
 
 ### Node (`node --test`)
 
@@ -552,7 +564,7 @@ there, which is why the categories live in the migration.
 
 Confirm or change Tracy's defaults (§0, D1–D6), plus:
 
-1. Are "Surgery", "Medical care" and "Vaccine Clinic" the right three categories and names?
+1. Are "Surgery", "Medical care" and "Vaccine clinic" the right three categories and names?
    Is anything missing (for example, "Community cats / TNR")?
 2. Would you like a one-line plain-language description under each category? If so, what
    should they say?

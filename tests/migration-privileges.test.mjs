@@ -91,6 +91,7 @@ for (const broad of [false, true]) {
     for (const file of migrations.filter((f) => f > prerequisite)) await db.exec(sql(file));
     await db.exec(sql(prerequisite));
     for (const file of ["public_submission_privileges.sql", "public_submission_idempotency.sql",
+      "public_submission_services.sql",
       "assistance_request_events.sql", "assistance_request_status.sql", "unit4_privileges.sql"]) {
       await db.exec(fs.readFileSync("supabase/tests/" + file, "utf8"));
     }
@@ -170,5 +171,82 @@ for (const fault of ["NO ACTION", "wrong constraint", "successful statement"]) {
       return e.code === state && e.constraint === "unrelated_constraint";
     });
     await db.exec("rollback");
+  });
+}
+
+// Slice 2a: 20261117000000_submit_requested_services.sql
+const slice2a = "20261117000000_submit_requested_services.sql";
+const v1Call = (key, changes = {}) => {
+  const p = { first_name: "Fictional", last_name: "Before2a", phone: "555-0105", species: "dog", help: "Fictional pre-2a request", ...changes };
+  return `select assistance_request_id::text id from public.submit_public_assistance_request('${key}'::uuid,
+    '${p.first_name}','${p.last_name}','${p.phone}','','','${p.species}','male','unknown',1.50,'','',
+    '${p.help}',5.0,'','','unknown','unknown','','','',array['friday','monday'])`;
+};
+async function chainThrough(t, last, broad = false) {
+  const db = await fixture(t, broad);
+  for (const file of migrations.filter((f) => f >= prerequisite && f <= last)) await db.exec(sql(file));
+  return db;
+}
+
+for (const broad of [false, true]) {
+  test(`v1 receipts written before Slice 2a still verify after it (${broad ? "broad" : "restrictive"} defaults)`, options, async (t) => {
+    const db = await chainThrough(t, "20261012000000_add_public_submission_idempotency.sql", broad);
+    t.diagnostic((await db.query("select version() as engine")).rows[0].engine);
+    const key = "7d3c8a5e-0b1f-4a8e-9c2d-000000002a01";
+    await db.exec("set role service_role");
+    const [{ id: original }] = (await db.query(v1Call(key))).rows;
+    await db.exec("reset role");
+    const receipt = (await db.query("select payload_hash, contract_version from public.public_assistance_submission_receipts")).rows[0];
+    await db.exec(sql(slice2a));
+    await db.exec("set role service_role");
+    // Same submission through the NEW function (old app: new arguments omitted).
+    assert.equal((await db.query(v1Call(key))).rows[0].id, original);
+    await assert.rejects(db.query(v1Call(key, { help: "Different fictional help" })), (e) => e.code === "PT409");
+    await db.exec("reset role");
+    assert.deepEqual((await db.query("select payload_hash, contract_version from public.public_assistance_submission_receipts")).rows[0], receipt);
+    assert.equal((await db.query("select count(*)::int n from public.assistance_requests")).rows[0].n, 1);
+  });
+}
+
+test("Slice 2a fails closed on an unexpected submission overload", options, async (t) => {
+  const db = await chainThrough(t, "20261012000000_add_public_submission_idempotency.sql");
+  await db.exec("create function public.submit_public_assistance_request(p text) returns void language sql as 'select null'");
+  await assert.rejects(db.exec(sql(slice2a)), (e) => e.code === "P0001" && /Unexpected submission overload/.test(e.message));
+  await db.exec("rollback");
+  // Rolled back: the old signature and the stray overload both remain; no new column.
+  assert.equal((await db.query("select count(*)::int n from pg_proc where proname='submit_public_assistance_request'")).rows[0].n, 2);
+  assert.equal((await db.query("select to_regprocedure('public.submit_public_assistance_request(uuid,text,text,text,text,text,text,text,text,numeric,text,text,text,numeric,text,text,text,text,text,text,text,text[])') is not null ok")).rows[0].ok, true);
+  assert.equal((await db.query("select exists(select 1 from pg_attribute where attrelid='public.services'::regclass and attname='is_public_request_option') found")).rows[0].found, false);
+});
+
+test("Slice 2a fails closed when a category slug is taken by another row", options, async (t) => {
+  const db = await chainThrough(t, "20261012000000_add_public_submission_idempotency.sql");
+  await db.exec("insert into public.services (name, slug) values ('Surgery', 'surgery-legacy')");
+  await assert.rejects(db.exec(sql(slice2a)), (e) => e.code === "P0001" && /Unexpected public request options/.test(e.message));
+  await db.exec("rollback");
+});
+
+for (const broad of [false, true]) {
+  test(`full chain plus seed, then submission SQL tests (${broad ? "broad" : "restrictive"} defaults)`, options, async (t) => {
+    const db = await chainThrough(t, migrations.at(-1), broad);
+    t.diagnostic((await db.query("select version() as engine")).rows[0].engine);
+    await db.exec(fs.readFileSync("supabase/seed.sql", "utf8"));
+    assert.deepEqual((await db.query("select slug from public.services where is_public_request_option order by sort_order")).rows.map((r) => r.slug),
+      ["surgery", "medical-care", "vaccine-clinic"]);
+    assert.equal((await db.query("select count(*)::int n from public.services where not is_public_request_option")).rows[0].n, 8);
+    for (const file of ["public_submission_idempotency.sql", "public_submission_services.sql"]) {
+      await db.exec(fs.readFileSync("supabase/tests/" + file, "utf8"));
+    }
+    // A v2 request with seeded data, read back the way the admin detail page does.
+    const key = "7d3c8a5e-0b1f-4a8e-9c2d-000000002a02";
+    await db.exec("set role service_role");
+    await db.query(`select * from public.submit_public_assistance_request('${key}'::uuid,'Fictional','Seeded','555-0106','','',
+      'cat','female','altered',null,'','','Fictional seeded request',null,'','','current','using','','','',array[]::text[],
+      2::smallint, array['50000000-0000-0000-0000-000000000103','50000000-0000-0000-0000-000000000101']::uuid[], true)`);
+    const rows = (await db.query(`select s.name, ra.service_advice_requested from public.request_animals ra
+      join public.request_animal_services ras on ras.request_animal_id = ra.id join public.services s on s.id = ras.service_id
+      order by s.sort_order`)).rows;
+    await db.exec("reset role");
+    assert.deepEqual(rows, [{ name: "Surgery", service_advice_requested: true }, { name: "Vaccine clinic", service_advice_requested: true }]);
   });
 }

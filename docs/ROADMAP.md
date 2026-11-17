@@ -183,3 +183,4 @@ Things noticed during a step but out of scope. Triage these between steps.
 - Ask MMAC for the original logo file (SVG or high-res transparent PNG).
 - Get Involved page is one section for launch — add volunteer sign-up and other ways to help later.
 - Service tiles have names only — add one-line descriptions from MMAC.
+- `services` and `request_animal_services` likely carry Supabase's default anon/authenticated write grants (blocked by RLS with no policies). Consider a privilege-normalization step like 20260919000000. Found in Slice 2a.
