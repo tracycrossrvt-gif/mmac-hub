@@ -28,6 +28,11 @@ export async function submitGetHelpRequest(input: unknown): Promise<SubmitGetHel
     }
 
     const { submissionId, data } = result.data;
+    // v1 is a saved pre-Slice 2a attempt: it has no service inputs at all.
+    const services = "contractVersion" in result.data
+      ? { p_contract_version: 2, p_service_ids: result.data.data.serviceIds,
+          p_service_advice_requested: result.data.data.serviceAdviceRequested }
+      : { p_contract_version: 1, p_service_ids: [], p_service_advice_requested: false };
     const supabase = createAdminClient();
 
     const ageYears = data.age === undefined ? null : Number(data.age);
@@ -57,6 +62,7 @@ export async function submitGetHelpRequest(input: unknown): Promise<SubmitGetHel
         p_medical_concerns: data.medicalConcerns ?? "",
         p_last_heat_cycle_notes: data.lastHeatCycleNotes ?? "",
         p_available_days: data.availableDays ?? [],
+        ...services,
       });
 
     if (error) {

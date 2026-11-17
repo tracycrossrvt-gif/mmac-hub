@@ -2,13 +2,17 @@ import { z } from "zod";
 import { getHelpSubmissionSchema, type GetHelpSubmission } from "../validation/getHelpSubmissionSchema";
 import type { GetHelpFormData } from "../validation/getHelpSchema";
 
+// The record format is unchanged (version 1). The submission inside carries its
+// own contract: v2 (with services) for new attempts, or v1 for an attempt saved
+// before Slice 2a, which must still restore and retry exactly as saved.
+
 export const submissionStorageKey = "mmac.public-assistance-attempt.v1";
 // Non-sensitive marker survives emergency snapshot removal. A reload must not
 // interpret lost recovery data as permission to create a new submission.
 export const submissionGuardKey = `${submissionStorageKey}.guard`;
 const attemptSchema = z.discriminatedUnion("state", [
-  z.object({ version: z.literal(1), state: z.literal("pending"), submission: getHelpSubmissionSchema.strict() }).strict(),
-  z.object({ version: z.literal(1), state: z.literal("conflict"), submission: getHelpSubmissionSchema.strict() }).strict(),
+  z.object({ version: z.literal(1), state: z.literal("pending"), submission: getHelpSubmissionSchema }).strict(),
+  z.object({ version: z.literal(1), state: z.literal("conflict"), submission: getHelpSubmissionSchema }).strict(),
   z.object({ version: z.literal(1), state: z.literal("complete"), submissionId: z.uuid(), requestId: z.uuid() }).strict(),
 ]);
 export type PublicSubmissionAttempt = z.output<typeof attemptSchema>;
@@ -18,6 +22,7 @@ type AttemptStorage = Pick<Storage, "getItem" | "setItem" | "removeItem">;
 function freezeAttempt(attempt: PublicSubmissionAttempt): PublicSubmissionAttempt {
   if (attempt.state !== "complete") {
     if (attempt.submission.data.availableDays) Object.freeze(attempt.submission.data.availableDays);
+    if (attempt.submission.data.serviceIds) Object.freeze(attempt.submission.data.serviceIds);
     Object.freeze(attempt.submission.data);
     Object.freeze(attempt.submission);
   }
@@ -59,7 +64,7 @@ export function beginSubmissionAttempt(
   if (readSubmissionAttempt(storage) !== null) throw new Error("An attempt already exists");
   // Parsing clones the caller's form data. Neither later edits nor retries may
   // change this snapshot. Save and verify it BEFORE the first network call.
-  const submission = getHelpSubmissionSchema.parse({ submissionId: makeId(), data });
+  const submission = getHelpSubmissionSchema.parse({ submissionId: makeId(), contractVersion: 2, data });
   const attempt = freezeAttempt({ version: 1, state: "pending", submission }) as PendingSubmissionAttempt;
   writeAttempt(storage, attempt);
   return attempt;

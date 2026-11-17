@@ -1,12 +1,12 @@
 import type { RequestDetail } from "../server/getRequestDetail";
 import { CaseField } from "./CaseSummary";
-import { dateOnly, displayCode, displayValue } from "./caseDisplay";
+import { adviceRequestedText, dateOnly, displayCode, displayValue } from "./caseDisplay";
 
 export function CaseAnimals({ animals }: { animals: RequestDetail["request_animals"] }) {
   return <section aria-labelledby="animal-information">
     <h2 id="animal-information" className="text-xl font-semibold">Animal information</h2>
     {animals.length === 0 && <p className="mt-4">No animals recorded.</p>}
-    <div className="mt-4 space-y-5">{animals.map(({ id, animal, prescreens: health, request_animal_services: services, outcome, outcome_notes }) =>
+    <div className="mt-4 space-y-5">{animals.map(({ id, animal, prescreens: health, request_animal_services: services, service_advice_requested: adviceRequested, outcome, outcome_notes }) =>
       <article key={id} className="rounded-xl border border-slate-300 p-5">
         <h3 className="text-lg font-semibold">{animal.name || "Unnamed animal"} · {displayCode(animal.species)}</h3>
         <dl className="mt-4 grid gap-4 sm:grid-cols-3">
@@ -45,7 +45,8 @@ export function CaseAnimals({ animals }: { animals: RequestDetail["request_anima
           <li key={serviceId}><p className="font-medium">{service.name}</p>
             {service.description && <p>{service.description}</p>}
             {notes && <p className="whitespace-pre-wrap break-words">{notes}</p>}
-          </li>)}</ul> : <p className="mt-2">No structured services recorded.</p>}
+          </li>)}</ul> : !adviceRequested && <p className="mt-2">No structured services recorded.</p>}
+        {adviceRequested && <p className="mt-2 font-medium">{adviceRequestedText}</p>}
         {(outcome || outcome_notes) && <div className="mt-5">
           <h4 className="font-semibold">Previously recorded animal outcome</h4>
           <p>{displayCode(outcome)}</p><p className="whitespace-pre-wrap break-words">{outcome_notes}</p>

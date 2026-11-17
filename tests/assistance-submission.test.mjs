@@ -9,6 +9,8 @@ const requestId = "bc9db68e-6eae-4aca-a22e-3571ae10e8b4";
 const receipt = { assistance_request_id: requestId, status: "new" };
 const privateDetail = "PRIVATE_DATABASE_DETAIL_AND_SUBMITTED_CONTACT";
 const plain = (value) => JSON.parse(JSON.stringify(value));
+// Fixed public category ID from the Slice 2a migration (not an RFC-versioned UUID).
+const surgery = "50000000-0000-0000-0000-000000000101";
 
 function input(overrides = {}) {
   return {
@@ -19,7 +21,7 @@ function input(overrides = {}) {
     preventionUseStatus: "not_using", preventionProduct: "", medicalConcerns: "",
     lastHeatCycleNotes: "", availableDays: ["monday", "friday"],
     transportationNotes: " Morning only ", statedContributionAmount: "25",
-    additionalInformation: "", ...overrides,
+    additionalInformation: "", serviceIds: [surgery], serviceAdviceRequested: false, ...overrides,
   };
 }
 
@@ -38,7 +40,7 @@ function harness(options = {}) {
   });
   const rawSubmit = load(actionPath).submitGetHelpRequest;
   return { calls, schema: load(schemaPath).getHelpSchema, rawSubmit,
-    submit: (data) => rawSubmit({ submissionId, data }) };
+    submit: (data) => rawSubmit({ submissionId, contractVersion: 2, data }) };
 }
 
 test("valid anonymous submission uses only the existing RPC and returns a minimal confirmed receipt", async () => {
@@ -57,6 +59,7 @@ test("valid anonymous submission uses only the existing RPC and returns a minima
     p_rabies_status: "unknown", p_prevention_use_status: "not_using",
     p_prevention_product: "", p_medical_concerns: "", p_last_heat_cycle_notes: "",
     p_available_days: ["monday", "friday"],
+    p_contract_version: 2, p_service_ids: [surgery], p_service_advice_requested: false,
   });
 });
 
@@ -127,7 +130,8 @@ test("existing select options, unknown answers, number-input notation and storag
     assert.equal(h.calls.rpc.at(-1).payload.p_age_years, age === undefined || age === "" ? null : Number(age));
   }
   for (const species of ["dog", "cat", "other"]) {
-    assert.equal((await h.submit(input({ species, sex: "unknown", alteredStatus: "unknown",
+    const services = species === "other" ? { serviceIds: [], serviceAdviceRequested: true } : {};
+    assert.equal((await h.submit(input({ species, ...services, sex: "unknown", alteredStatus: "unknown",
       rabiesStatus: "not_current", preventionUseStatus: "unknown", statedContributionAmount: 0 }))).success, true);
   }
   assert.equal((await h.submit(input({ sex: "female", alteredStatus: "unaltered", lastHeatCycleNotes: " Unknown ",

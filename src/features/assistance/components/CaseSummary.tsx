@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import type { CaseEvent, RequestDetail } from "../server/getRequestDetail";
 import { statusLabels } from "../statusWorkflow";
 import { interactionLabels } from "../interactionOptions";
-import { caseDate, displayCode, displayValue } from "./caseDisplay";
+import { caseDate, displayCode, displayValue, requestedServicesText } from "./caseDisplay";
 
 export function CaseField({ label, children }: { label: string; children: ReactNode }) {
   return <div><dt className="text-sm font-medium">{label}</dt><dd className="mt-1 whitespace-pre-wrap break-words">{children}</dd></div>;
@@ -52,7 +52,7 @@ export function CaseSummary({ request, latest }: { request: RequestDetail; lates
       {request.request_animals.length ? <ul className="mt-2 space-y-2">
         {request.request_animals.map((item) => <li key={item.id}>
           <span className="font-medium">{item.animal.name || "Unnamed animal"}: </span>
-          {item.request_animal_services.length ? item.request_animal_services.map(({ service }) => service.name).join(", ") : "No structured services recorded"}
+          {requestedServicesText(item)}
         </li>)}
       </ul> : <p className="mt-2">No structured services recorded.</p>}
       <h3 className="mt-5 font-medium">Original request explanation</h3>

@@ -2,7 +2,7 @@
 
 This is the single source of truth for where the project stands. Humans and coding agents read it at the start of every session and update it at the end of every step.
 
-**Current step:** Phase 5 — Slice 2a — Requested services (design approved 2026-11-17; implementation next)
+**Current step:** Phase 5 — Slice 2a — Requested services, step 3: apply the migration to the dev database (steps 1–2 done 2026-11-17)
 **Next step:** Slice 2b — Multiple animals per request
 **Live demo:** https://mmac-hub.vercel.app (portfolio demo, test data only). Deployed from `main` 2026-11-08.
 **Launch target:** live portfolio demo by Sunday 2026-11-08 evening. Shared with MMAC and employers; test data only.
@@ -100,6 +100,7 @@ Gate: Stephanie reviews the portfolio demo and signs off. Do not start until the
 - [ ] Privacy notice on the form (what's collected, who sees it, retention)
 - [ ] Finish the "After launch" acceptance tests (conflict, lost response, duplicate tab, storage failure, log check)
 - [ ] "Submit another request" on the success card (move from Parking lot)
+- [ ] Investigate and fix before Stephanie gets an admin account: `node tests/unit3-http.mjs --unit4` fails at the "wrong admin → /admin/denied" redirect (gets /admin/login). Pre-existing; reproduced on the code before Slice 2a step 2.
 - [ ] Admin account for Stephanie + 20-minute walkthrough
 - [ ] Go live; portfolio demo stays separate on the dev database
 
@@ -152,8 +153,11 @@ Step 3 of the Get Help workflow ("Request Services") for a single animal, using 
 
 - [ ] **Slice 2a — Requested services (single animal)** ← current
   - [x] Design doc: docs/slice2a-requested-services.md (approved by Tracy 2026-11-17; broad public categories, Tracy defaults pending Stephanie review)
-  - [ ] Implementation: migration, schema/action/form, admin advice flag, tests (SQL, Node, PGlite on PG17 + PG18)
-  - [ ] Rollout to the dev project: backup, dry run, db push, verify; then deploy code (migration first)
+  - [x] Step 1: migration + seed + SQL tests (`3e43e70`, 2026-11-17). PGlite 0.3.14 / PG 17.5 rehearsal passed. PG 18 check not run because PGlite 0.5.8 isn't installed.
+  - [x] Step 2: application code (options loader, form, schema/action, saved-attempt v1 compatibility, admin advice flag) + Node tests (2026-11-17). 328/328 tests with PGlite; lint, typecheck, build clean.
+  - [ ] Step 3: rollout to the dev project: backup, dry run, db push, verify (design §6)
+  - [ ] Step 4: browser check, then PR and merge to `main` (Vercel deploys)
+  - **Merge order: apply the migration to the dev DB (step 3) BEFORE merging to main.** The new code asks for columns and function inputs that only exist after the migration. Merging first breaks the live admin detail page and public submissions.
 - [ ] **Slice 2b — Multiple animals per request** ← next
 
 ---

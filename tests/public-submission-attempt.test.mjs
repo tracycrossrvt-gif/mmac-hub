@@ -8,9 +8,13 @@ const { beginSubmissionAttempt: begin, readSubmissionAttempt: read, verifyPendin
   submissionStorageKey: key } = helpers;
 const id = "7b828e94-bc49-435b-a1dc-f2d4d01f6fe0";
 const requestId = "bc9db68e-6eae-4aca-a22e-3571ae10e8b4";
-const data = () => ({ firstName: "Test", lastName: "Only", phone: "555-0102", species: "dog",
+// Saved before Slice 2a: no service fields, no contract version (v1).
+const legacyData = () => ({ firstName: "Test", lastName: "Only", phone: "555-0102", species: "dog",
   sex: "male", alteredStatus: "unknown", rabiesStatus: "unknown", preventionUseStatus: "unknown",
   helpSummary: "PRIVATE_HELP_TEXT", medicalConcerns: "PRIVATE_MEDICAL", availableDays: ["monday"] });
+const surgery = "50000000-0000-0000-0000-000000000101";
+const vaccineClinic = "50000000-0000-0000-0000-000000000103";
+const data = () => ({ ...legacyData(), serviceIds: [vaccineClinic, surgery], serviceAdviceRequested: false });
 function storage() {
   const values = new Map();
   return { getItem: k => values.get(k) ?? null, setItem: (k,v) => values.set(k,v), removeItem: k => values.delete(k) };
@@ -117,7 +121,7 @@ test("read-back failure after writing confirmation cannot become a fresh attempt
 });
 
 test("legacy pending snapshots gain the guard before being eligible for retry", () => {
-  const s = storage(); s.setItem(key, JSON.stringify({version:1, state:"pending", submission:{submissionId:id, data:data()}}));
+  const s = storage(); s.setItem(key, JSON.stringify({version:1, state:"pending", submission:{submissionId:id, data:legacyData()}}));
   assert.equal(read(s).state, "pending");
   assert.equal(s.getItem(helpers.submissionGuardKey), id);
   s.removeItem(key);
