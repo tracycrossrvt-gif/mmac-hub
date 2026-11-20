@@ -125,7 +125,8 @@ insert into public.services (
   description,
   species_scope,
   is_active,
-  sort_order
+  sort_order,
+  is_public_request_option
 )
 values
   (
@@ -135,7 +136,8 @@ values
     'Spay or neuter coordination.',
     'all',
     true,
-    10
+    10,
+    false
   ),
   (
     '50000000-0000-0000-0000-000000000002',
@@ -144,7 +146,8 @@ values
     'Rabies vaccination coordination.',
     'all',
     true,
-    20
+    20,
+    false
   ),
   (
     '50000000-0000-0000-0000-000000000003',
@@ -153,7 +156,8 @@ values
     'Routine core vaccination coordination.',
     'all',
     true,
-    30
+    30,
+    false
   ),
  (
   '50000000-0000-0000-0000-000000000004',
@@ -162,7 +166,8 @@ values
   'Parasite prevention assistance.',
   'all',
   true,
-  40
+  40,
+  false
   ),
   (
     '50000000-0000-0000-0000-000000000005',
@@ -171,7 +176,8 @@ values
     'Routine heartworm screening request.',
     'dog',
     true,
-    50
+    50,
+    false
   ),
   (
     '50000000-0000-0000-0000-000000000006',
@@ -180,7 +186,8 @@ values
     'Routine feline FeLV/FIV screening request.',
     'cat',
     true,
-    60
+    60,
+    false
   ),
   (
     '50000000-0000-0000-0000-000000000007',
@@ -189,7 +196,8 @@ values
     'Basic nail trimming service.',
     'all',
     true,
-    70
+    70,
+    false
   ),
   (
     '50000000-0000-0000-0000-000000000008',
@@ -198,7 +206,41 @@ values
     'Microchip placement request.',
     'all',
     true,
-    80
+    80,
+    false
+  ),
+  -- Broad public request categories (Slice 2a). The migration
+  -- 20261117000000_submit_requested_services.sql inserts the same rows so
+  -- databases that are never reset get them too. Keep both in sync.
+  (
+    '50000000-0000-0000-0000-000000000101',
+    'Surgery',
+    'surgery',
+    null,
+    'all',
+    true,
+    110,
+    true
+  ),
+  (
+    '50000000-0000-0000-0000-000000000102',
+    'Medical care',
+    'medical-care',
+    null,
+    'all',
+    true,
+    120,
+    true
+  ),
+  (
+    '50000000-0000-0000-0000-000000000103',
+    'Vaccine clinic',
+    'vaccine-clinic',
+    null,
+    'all',
+    true,
+    130,
+    true
   )
 on conflict (id) do update set
   name = excluded.name,
@@ -206,4 +248,5 @@ on conflict (id) do update set
   description = excluded.description,
   species_scope = excluded.species_scope,
   is_active = excluded.is_active,
-  sort_order = excluded.sort_order;
+  sort_order = excluded.sort_order,
+  is_public_request_option = excluded.is_public_request_option;

@@ -2,11 +2,12 @@
 
 This is the single source of truth for where the project stands. Humans and coding agents read it at the start of every session and update it at the end of every step.
 
-**Current step:** Phase 4 — remaining: admin screenshots for case study; Supabase pause plan
+**Current step:** Phase 5 — Slice 2a — Requested services, step 3: apply the migration to the dev database (steps 1–2 done 2026-11-17)
+**Next step:** Slice 2b — Multiple animals per request
 **Live demo:** https://mmac-hub.vercel.app (portfolio demo, test data only). Deployed from `main` 2026-11-08.
 **Launch target:** live portfolio demo by Sunday 2026-11-08 evening. Shared with MMAC and employers; test data only.
-**Active branch:** `main` (work on short-lived branches, merged by pull request)
-**Last updated:** 2026-11-08
+**Active branch:** `slice-2a-requested-services` (work on short-lived branches, merged by pull request)
+**Last updated:** 2026-11-17
 
 ---
 
@@ -99,6 +100,7 @@ Gate: Stephanie reviews the portfolio demo and signs off. Do not start until the
 - [ ] Privacy notice on the form (what's collected, who sees it, retention)
 - [ ] Finish the "After launch" acceptance tests (conflict, lost response, duplicate tab, storage failure, log check)
 - [ ] "Submit another request" on the success card (move from Parking lot)
+- [ ] Investigate and fix before Stephanie gets an admin account: `node tests/unit3-http.mjs --unit4` fails at the "wrong admin → /admin/denied" redirect (gets /admin/login). Pre-existing; reproduced on the code before Slice 2a step 2.
 - [ ] Admin account for Stephanie + 20-minute walkthrough
 - [ ] Go live; portfolio demo stays separate on the dev database
 
@@ -145,6 +147,19 @@ These are product capabilities, not prerequisites for the demo:
 - Service-delivery reporting
 - Community cat / TNR projects, vaccine clinics, volunteer and donate flows
 
+## Phase 5 — Slice 2a
+
+Step 3 of the Get Help workflow ("Request Services") for a single animal, using the existing `services` and `request_animal_services` tables. Phase 4 leftovers (admin screenshots, Supabase pause plan) remain open above.
+
+- [ ] **Slice 2a — Requested services (single animal)** ← current
+  - [x] Design doc: docs/slice2a-requested-services.md (approved by Tracy 2026-11-17; broad public categories, Tracy defaults pending Stephanie review)
+  - [x] Step 1: migration + seed + SQL tests (`3e43e70`, 2026-11-17). PGlite 0.3.14 / PG 17.5 rehearsal passed. PG 18 check not run because PGlite 0.5.8 isn't installed.
+  - [x] Step 2: application code (options loader, form, schema/action, saved-attempt v1 compatibility, admin advice flag) + Node tests (2026-11-17). 328/328 tests with PGlite; lint, typecheck, build clean.
+  - [ ] Step 3: rollout to the dev project: backup, dry run, db push, verify (design §6)
+  - [ ] Step 4: browser check, then PR and merge to `main` (Vercel deploys)
+  - **Merge order: apply the migration to the dev DB (step 3) BEFORE merging to main.** The new code asks for columns and function inputs that only exist after the migration. Merging first breaks the live admin detail page and public submissions.
+- [ ] **Slice 2b — Multiple animals per request** ← next
+
 ---
 
 ## Open product decisions
@@ -172,3 +187,4 @@ Things noticed during a step but out of scope. Triage these between steps.
 - Ask MMAC for the original logo file (SVG or high-res transparent PNG).
 - Get Involved page is one section for launch — add volunteer sign-up and other ways to help later.
 - Service tiles have names only — add one-line descriptions from MMAC.
+- `services` and `request_animal_services` likely carry Supabase's default anon/authenticated write grants (blocked by RLS with no policies). Consider a privilege-normalization step like 20260919000000. Found in Slice 2a.

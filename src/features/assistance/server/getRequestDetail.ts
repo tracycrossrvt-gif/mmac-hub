@@ -26,6 +26,8 @@ export const requestDetailSchema = z.object({
   service_area: z.object({ name: z.string(), state: z.string() }).nullable(),
   request_animals: z.array(z.object({
     id: z.uuid(), outcome: text, outcome_notes: text,
+    // "Not sure — I'd like advice" on the public form (Slice 2a).
+    service_advice_requested: z.boolean(),
     animal: z.object({ name: text, species: z.string(), sex: text, altered_status: text,
       age_years: z.number().nullable(), breed: text, color_description: text,
       microchip_number: text, notes: text }),
@@ -78,7 +80,7 @@ export async function getRequestDetail(requestId: string) {
       ),
       service_area:service_areas!assistance_requests_service_area_id_fkey (name, state),
       request_animals (
-        id, outcome, outcome_notes,
+        id, outcome, outcome_notes, service_advice_requested,
         animal:animals!request_animals_animal_id_fkey (
           name, species, sex, altered_status, age_years, breed, color_description, microchip_number, notes
         ),

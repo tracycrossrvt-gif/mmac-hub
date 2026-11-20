@@ -18,6 +18,10 @@ import {
   type PendingSubmissionAttempt, type PublicSubmissionAttempt,
 } from "@/features/assistance/lib/publicSubmissionAttempt";
 
+import {
+  optionsForSpecies, serviceAdviceLabel, type PublicServiceOption,
+} from "@/features/assistance/serviceOptions";
+
 import { siteInfo } from "@/components/layout/siteInfo";
 import { buttonStyles } from "@/components/ui/button";
 import { AlertCircleIcon, CheckCircleIcon } from "@/components/ui/icons";
@@ -40,6 +44,8 @@ const errorFields: [keyof GetHelpFormInput, string][] = [
   ["alteredStatus", "altered-status"],
   ["age", "age"],
   ["lastHeatCycleNotes", "last-heat-cycle"],
+  // Placeholder target: the first checkbox shown in the services group.
+  ["serviceIds", "service-first"],
   ["helpSummary", "help-summary"],
   ["rabiesStatus", "rabies-status"],
   ["preventionUseStatus", "prevention-use"],
@@ -78,12 +84,28 @@ function DemoContactNote() {
   );
 }
 
-export function GetHelpForm() {
+// Names of removed options, for the polite announcement after a species change.
+function removedNotice(names: string[], species: unknown) {
+  const list = names.join(", ");
+  return species === "dog" || species === "cat"
+    ? `${list} ${names.length === 1 ? "was" : "were"} removed because ${names.length === 1 ? "it isn't" : "they aren't"} offered for this animal.`
+    : `${list} ${names.length === 1 ? "was" : "were"} removed. For other animals, choose “${serviceAdviceLabel}” and tell us what you need below.`;
+}
+
+export function GetHelpForm({
+  serviceOptions = [],
+  serviceOptionsUnavailable = false,
+}: {
+  serviceOptions?: PublicServiceOption[];
+  serviceOptionsUnavailable?: boolean;
+} = {}) {
   const {
     register,
     handleSubmit,
     control,
     reset,
+    setValue,
+    getValues,
     formState: { errors, isSubmitting },
   } = useForm<GetHelpFormInput, unknown, GetHelpFormData>({
     resolver: zodResolver(getHelpSchema),
@@ -108,6 +130,8 @@ export function GetHelpForm() {
       preventionProduct: "",
       medicalConcerns: "",
       availableDays: [],
+      serviceIds: [],
+      serviceAdviceRequested: false,
       transportationNotes: "",
       additionalInformation: "",
     },
@@ -162,6 +186,24 @@ export function GetHelpForm() {
 
   const shouldShowHeatCycle =
     sex === "female" && alteredStatus === "unaltered";
+
+  const species = useWatch({ control, name: "species" });
+  const visibleServices = optionsForSpecies(serviceOptions, species);
+  const [serviceNotice, setServiceNotice] = useState("");
+
+  // Never submit hidden selections: when the applicant changes species, drop
+  // options that no longer apply and say so politely.
+  const pruneServices = (nextSpecies: unknown) => {
+    const selected = getValues("serviceIds");
+    if (!Array.isArray(selected)) return;
+    const allowed = new Set(optionsForSpecies(serviceOptions, nextSpecies).map((option) => option.id));
+    const removed = selected.filter((id) => !allowed.has(id));
+    setServiceNotice(removed.length === 0 ? "" : removedNotice(
+      removed.map((id) => serviceOptions.find((option) => option.id === id)?.name ?? "A service"), nextSpecies));
+    if (removed.length > 0) {
+      setValue("serviceIds", selected.filter((id) => allowed.has(id)), { shouldValidate: invalidSubmits > 0 });
+    }
+  };
 
   const sendAttempt = async (pending: PendingSubmissionAttempt) => {
     if (inFlight.current || storageError) return;
@@ -232,9 +274,10 @@ export function GetHelpForm() {
     return typeof message === "string" ? message : undefined;
   };
 
+  const firstServiceTarget = visibleServices.length > 0 ? "service-0" : "service-advice";
   const summaryItems = errorFields.flatMap(([name, id]) => {
     const message = errorMessage(name);
-    return message ? [{ id, message }] : [];
+    return message ? [{ id: id === "service-first" ? firstServiceTarget : id, message }] : [];
   });
 
   // One card for every unresolved or failed state. A fresh server result
@@ -384,7 +427,7 @@ export function GetHelpForm() {
             <select
               className={controlClass}
               {...describe("species", "species")}
-              {...register("species")}
+              {...register("species", { onChange: (event) => pruneServices(event.target.value) })}
             >
               <option value="" disabled>
                 Select one
@@ -507,6 +550,62 @@ export function GetHelpForm() {
           Tell us what you are asking Macon Moves for help with. Requested
           services do not guarantee that care will be provided.
         </p>
+
+        <fieldset
+          className="mt-6"
+          aria-describedby={["services-hint", errorMessage("serviceIds") ? "services-error" : undefined].filter(Boolean).join(" ")}
+        >
+          <legend className="text-sm font-medium text-text">
+            Which services are you asking about?
+          </legend>
+
+          <p id="services-hint" className={hintClass}>
+            Select all that apply. Asking doesn&apos;t guarantee a service.
+          </p>
+
+          {serviceOptionsUnavailable ? (
+            <p className={hintClass}>
+              We couldn&apos;t load the list of services right now. Choose &ldquo;Not sure&rdquo; and tell us what you need below.
+            </p>
+          ) : species !== "dog" && species !== "cat" && species !== "other" ? (
+            <p className={hintClass}>Choose a species above to see the services we can help with.</p>
+          ) : null}
+
+          <div className="mt-4 grid gap-3 sm:grid-cols-2">
+            {visibleServices.map((option, index) => (
+              <label
+                key={option.id}
+                className="flex min-h-11 cursor-pointer items-center gap-3 rounded-lg border border-text/30 bg-white px-3 py-2 has-checked:border-primary has-checked:bg-primary/5"
+              >
+                <input
+                  id={`service-${index}`}
+                  type="checkbox"
+                  value={option.id}
+                  {...register("serviceIds")}
+                  className="size-5 shrink-0 accent-primary"
+                />
+                <span className="text-sm">{option.name}</span>
+              </label>
+            ))}
+
+            {visibleServices.length > 0 && (
+              <hr aria-hidden="true" className="my-1 border-text/15 sm:col-span-2" />
+            )}
+
+            <label className="flex min-h-11 cursor-pointer items-center gap-3 rounded-lg border border-text/30 bg-white px-3 py-2 has-checked:border-primary has-checked:bg-primary/5 sm:col-span-2">
+              <input
+                id="service-advice"
+                type="checkbox"
+                {...register("serviceAdviceRequested")}
+                className="size-5 shrink-0 accent-primary"
+              />
+              <span className="text-sm">{serviceAdviceLabel}</span>
+            </label>
+          </div>
+
+          <p aria-live="polite" className={serviceNotice ? hintClass : "sr-only"}>{serviceNotice}</p>
+          <FieldError id="services" message={errorMessage("serviceIds")} />
+        </fieldset>
 
         <div className="mt-6">
           <label htmlFor="help-summary" className={labelClass}>

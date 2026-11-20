@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
+import { connection } from "next/server";
 
 import { GetHelpForm } from "@/features/assistance/components/GetHelpForm";
+import { getPublicServiceOptions } from "@/features/assistance/server/getPublicServiceOptions";
 
 // Intake page per docs/DESIGN.md "Intake page (/get-help)". Copy comes from
 // the spec verbatim; don't add copy that isn't there.
@@ -13,7 +15,12 @@ export const metadata: Metadata = {
   description: intro,
 };
 
-export default function GetHelpPage() {
+export default async function GetHelpPage() {
+  // Render per request: the options come from the database, and the build must
+  // never need the service-role key or a database connection.
+  await connection();
+  const serviceOptions = await getPublicServiceOptions();
+
   return (
     <div className="bg-sand">
       <section data-surface="dark" className="bg-primary text-white">
@@ -32,7 +39,7 @@ export default function GetHelpPage() {
       </section>
 
       <div className="mx-auto w-full max-w-3xl px-4 py-10 sm:px-6 sm:py-12">
-        <GetHelpForm />
+        <GetHelpForm serviceOptions={serviceOptions ?? []} serviceOptionsUnavailable={serviceOptions === null} />
       </div>
     </div>
   );

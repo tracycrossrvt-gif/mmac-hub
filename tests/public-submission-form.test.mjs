@@ -22,7 +22,8 @@ for (const storageFailure of [false, true]) {
     const storage = { getItem: k => values.get(k) ?? null, setItem: (k,v) => values.set(k,v), removeItem: k => values.delete(k) };
     helper.beginSubmissionAttempt(storage, {firstName:"PRIVATE",lastName:"PRIVATE",phone:"555-0102",
       species:"dog",sex:"male",alteredStatus:"unknown",helpSummary:"PRIVATE MEDICAL",
-      rabiesStatus:"unknown",preventionUseStatus:"unknown",availableDays:["monday"],statedContributionAmount:25}, () => submissionId);
+      rabiesStatus:"unknown",preventionUseStatus:"unknown",availableDays:["monday"],statedContributionAmount:25,
+      serviceIds:["50000000-0000-0000-0000-000000000101"],serviceAdviceRequested:false}, () => submissionId);
     const states = [], refs = [], effects = [];
     let si = 0, ri = 0, mounted = false, form, calls = 0;
     const load = appLoader({
