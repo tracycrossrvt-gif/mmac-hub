@@ -48,6 +48,8 @@ Broader clinic coordination, community cat/TNR workflows, volunteer and partner 
 This project uses environment-specific Supabase configuration. Refer to `.env.example` and the repository's development instructions before running locally; never commit credentials or production secrets.
 
 ```bash
+git clone https://github.com/tracycrossrvt-gif/mmac-hub.git
+cd mmac-hub
 npm install
 npm run dev
 ```
