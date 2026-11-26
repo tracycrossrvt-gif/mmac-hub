@@ -2,12 +2,12 @@
 
 This is the single source of truth for where the project stands. Humans and coding agents read it at the start of every session and update it at the end of every step.
 
-**Current step:** Phase 5 — Slice 2a — Requested services, step 3: apply the migration to the dev database (steps 1–2 done 2026-11-17)
-**Next step:** Slice 2b — Multiple animals per request
-**Live demo:** https://mmac-hub.vercel.app (portfolio demo, test data only). Deployed from `main` 2026-11-08.
+**Current step:** Phase 5 — Slice 2b — Multiple animals per request (design next)
+**Next step:** MMAC-26 — Signed-in non-admin is redirected to login instead of access denied (fix before Stephanie gets an admin account)
+**Live demo:** https://mmac-hub.vercel.app (portfolio demo, test data only). Deployed from `main` 2026-11-08; now includes Slice 2a (requested services).
 **Launch target:** live portfolio demo by Sunday 2026-11-08 evening. Shared with MMAC and employers; test data only.
-**Active branch:** `slice-2a-requested-services` (work on short-lived branches, merged by pull request)
-**Last updated:** 2026-11-17
+**Active branch:** `MMAC-10-roadmap-slice-2a-done` (work on short-lived branches, merged by pull request)
+**Last updated:** 2026-11-26
 
 ---
 
@@ -151,14 +151,16 @@ These are product capabilities, not prerequisites for the demo:
 
 Step 3 of the Get Help workflow ("Request Services") for a single animal, using the existing `services` and `request_animal_services` tables. Phase 4 leftovers (admin screenshots, Supabase pause plan) remain open above.
 
-- [ ] **Slice 2a — Requested services (single animal)** ← current
+- [x] **Slice 2a — Requested services (single animal)** ✅ Complete 2026-11-20
   - [x] Design doc: docs/slice2a-requested-services.md (approved by Tracy 2026-11-17; broad public categories, Tracy defaults pending Stephanie review)
   - [x] Step 1: migration + seed + SQL tests (`3e43e70`, 2026-11-17). PGlite 0.3.14 / PG 17.5 rehearsal passed. PG 18 check not run because PGlite 0.5.8 isn't installed.
   - [x] Step 2: application code (options loader, form, schema/action, saved-attempt v1 compatibility, admin advice flag) + Node tests (2026-11-17). 328/328 tests with PGlite; lint, typecheck, build clean.
-  - [ ] Step 3: rollout to the dev project: backup, dry run, db push, verify (design §6)
-  - [ ] Step 4: browser check, then PR and merge to `main` (Vercel deploys)
+  - [x] Step 3: rollout to the dev project: backup, dry run, db push, verify (design §6)
+    - Done 2026-11-20: migration 20261117000000 applied to the dev project (backup, dry run, db push). Verified: 25 migrations recorded, both new columns present, one submit function, public options = Surgery, Medical care, Vaccine clinic.
+  - [x] Step 4: browser check, then PR and merge to `main` (Vercel deploys)
+    - Done 2026-11-20: browser-tested locally (dog + Surgery submission shows "Belikin: Surgery" under Requested Help in admin detail). Merged to `main` via PR #3; Vercel deployed.
   - **Merge order: apply the migration to the dev DB (step 3) BEFORE merging to main.** The new code asks for columns and function inputs that only exist after the migration. Merging first breaks the live admin detail page and public submissions.
-- [ ] **Slice 2b — Multiple animals per request** ← next
+- [ ] **Slice 2b — Multiple animals per request** ← current
 
 ---
 
